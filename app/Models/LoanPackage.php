@@ -13,14 +13,15 @@ class LoanPackage extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'name',
-        'min_amount',
-        'max_amount',
-        'min_term_days',
-        'max_term_days',
-        'interest_rate_year',
-        'service_fee_rate',
-        'is_active',
+        'config_loans',
+    ];
+
+    protected $casts = [
+        'config_loans' => 'array',
+    ];
+
+    protected $attributes = [
+        'config_loans' => '{"name":"","term_month":0,"interest_rate":0,"active":false}',
     ];
 
     protected static function booted()
@@ -36,5 +37,4 @@ class LoanPackage extends Model
     {
         return $this->hasMany(UserLoan::class);
     }
-
 }
