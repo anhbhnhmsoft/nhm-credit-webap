@@ -71,12 +71,20 @@ return new class extends Migration
 			$table->timestamps();
 		});
 
+		// Bảng để lưu trữ các ngân hàng
+		Schema::create('banks', function (Blueprint $table) {
+			$table->id();
+			$table->string('code')->comment('Mã ngân hàng');
+			$table->string('name')->comment('Tên ngân hàng');
+			$table->softDeletes();
+			$table->timestamps();
+		});
+
 		// Tài khoản ngân hàng của người dùng
 		Schema::create('user_bank_accounts', function (Blueprint $table) {
 			$table->id();
 			$table->foreignId('user_id')->constrained()->cascadeOnDelete()->comment('ID người dùng');
-			$table->string('bank_code')->comment('Mã ngân hàng');
-			$table->string('bank_name')->comment('Tên ngân hàng');
+			$table->foreignId('bank_id')->nullable()->constrained('banks')->nullOnDelete()->comment('ID ngân hàng');
 			$table->string('account_number')->comment('Số tài khoản');
 			$table->string('account_name')->comment('Tên chủ tài khoản');
 			$table->boolean('is_verified')->default(false)->comment('Đã xác thực');
@@ -171,6 +179,7 @@ return new class extends Migration
 		Schema::dropIfExists('user_loans');
 		Schema::dropIfExists('loan_packages');
 		Schema::dropIfExists('user_bank_accounts');
+		Schema::dropIfExists('banks');
 		Schema::dropIfExists('configs');
 		Schema::dropIfExists('personal_access_tokens');
 		Schema::dropIfExists('user_reset_codes');
