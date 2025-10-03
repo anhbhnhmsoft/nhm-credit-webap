@@ -5,33 +5,26 @@ namespace App\Models;
 use App\Utils\Helper;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class UserBankAccount extends Model
+class Bank extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'user_id',
-        'bank_id',
-        'account_number',
-        'account_name',
-        'is_verified',
+        'id',
+        'code',
+        'name',
     ];
 
-    protected static function booted()
+    protected static function booted(): void
     {
-        static::creating(function ($model) {
+        static::creating(function (self $model): void {
             if (empty($model->id)) {
                 $model->id = Helper::getTimestampAsId();
             }
         });
     }
-    
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
-
 }
+
+

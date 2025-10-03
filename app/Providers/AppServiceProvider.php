@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Services\AuthService;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\App;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,6 +21,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        if (request()->is('admin*')) {
+            App::setLocale('vi');
+        }
     }
 }
