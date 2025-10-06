@@ -148,7 +148,7 @@ return new class extends Migration
 			$table->decimal('amount', 12, 2)->comment('Số tiền giao dịch');
 			$table->tinyInteger('direction')->default(1)->comment('Chiều giao dịch, lưu trong enum PaymentDirection');
 			$table->tinyInteger('status')->default(1)->comment('Trạng thái giao dịch, lưu trong enum PaymentStatus');
-			$table->json('metadata')->nullable()->comment('Dữ liệu bổ sung');
+			$table->text('description')->nullable()->comment('Mô tả giao dịch');
 			$table->softDeletes();
 			$table->timestamps();
 			$table->index(['user_loan_id','user_loan_log_id'])->comment('Index cho truy vấn nhanh');
