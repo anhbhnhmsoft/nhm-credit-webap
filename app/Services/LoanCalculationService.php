@@ -4,41 +4,38 @@ namespace App\Services;
 
 class LoanCalculationService
 {
-    public function calcAmount($principalAmount, $interestRate, $termMonths, $serviceFee = 0): float
+    public function calcAmount($principalAmount, $interestRateTerm, $termMonths, $serviceFee = 0): float
     {
-        if (!$principalAmount || !$interestRate || !$termMonths) {
+        if (!$principalAmount || !$interestRateTerm || !$termMonths) {
             return 0;
         }
 
         $principalAmount = (float) $principalAmount;
-        $interestRate = (float) $interestRate;
+        $interestRateTerm = (float) $interestRateTerm;
         $termMonths = (int) $termMonths;
         $serviceFee = (float) ($serviceFee ?? 0);
 
-        if ($principalAmount <= 0 || $interestRate < 0 || $termMonths <= 0) {
+        if ($principalAmount <= 0 || $interestRateTerm < 0 || $termMonths <= 0) {
             return 0;
         }
 
-        $monthlyInterestRate = $interestRate / 100 / 12;
-        
-        $monthlyPayment = $this->calcMonthlyPayment($principalAmount, $monthlyInterestRate, $termMonths);
-        
-        $totalAmount = $monthlyPayment * $termMonths + $serviceFee;
+        $monthlyPrincipal = $principalAmount / $termMonths;
+        $monthlyInterestFlat = ($principalAmount * ($interestRateTerm / 100)) / $termMonths;
+        $monthlyPayment = $monthlyPrincipal + $monthlyInterestFlat;
+        $totalAmount = ($monthlyPayment * $termMonths) + $serviceFee;
         
         return round($totalAmount, 2);
     }
 
-    public function calcMonthlyPayment($principal, $monthlyRate, $months): float
+    public function calcMonthlyPayment($principal, $monthlyRate, $months, $interestRateTermPercent = null): float
     {
-        if ($monthlyRate == 0) {
-            return $principal / $months;
+        if ($months <= 0) return 0;
+        if ($interestRateTermPercent !== null) {
+            $monthlyPrincipal = $principal / $months;
+            $monthlyInterestFlat = ($principal * ($interestRateTermPercent / 100)) / $months;
+            return $monthlyPrincipal + $monthlyInterestFlat;
         }
-
-        // Công thức trả góp: PMT = P * [r(1+r)^n] / [(1+r)^n - 1]
-        $numerator = $monthlyRate * pow(1 + $monthlyRate, $months);
-        $denominator = pow(1 + $monthlyRate, $months) - 1;
-        
-        return $principal * ($numerator / $denominator);
+        return $principal / $months;
     }
 
     public function fillTotalAmount(array $data): array
@@ -58,5 +55,67 @@ class LoanCalculationService
         }
 
         return $data;
+    }
+
+    public function calculateLoanData(array $data): array
+    {
+        $data = $this->fillTotalAmount($data);
+        
+        if (isset($data['start_date']) && isset($data['term_months'])) {
+            $startDate = is_string($data['start_date']) 
+                ? \Carbon\Carbon::parse($data['start_date']) 
+                : $data['start_date'];
+            
+            $data['due_date'] = $startDate->copy()->addMonths($data['term_months']);
+        }
+        
+        if (isset($data['principal_amount']) && 
+            isset($data['interest_rate_year']) && 
+            isset($data['term_months'])) {
+            
+            $data['monthly_payment'] = $this->calcMonthlyPayment(
+                $data['principal_amount'],
+                null,
+                $data['term_months'],
+                $data['interest_rate_year']
+            );
+        }
+        
+        return $data;
+    }
+
+    public function updateLoanCalculations($loan, array $changes): void
+    {
+        $needsRecalculation = false;
+        $needsDateUpdate = false;
+        
+        $calculationFields = ['principal_amount', 'interest_rate_year', 'term_months', 'service_fee_amount'];
+        foreach ($calculationFields as $field) {
+            if (array_key_exists($field, $changes)) {
+                $needsRecalculation = true;
+                break;
+            }
+        }
+        
+        $dateFields = ['start_date', 'term_months'];
+        foreach ($dateFields as $field) {
+            if (array_key_exists($field, $changes)) {
+                $needsDateUpdate = true;
+                break;
+            }
+        }
+        
+        if ($needsRecalculation || $needsDateUpdate) {
+            $data = $loan->toArray();
+            $data = array_merge($data, $changes);
+            $data = $this->calculateLoanData($data);
+            
+            $loan->total_due_amount = $data['total_due_amount'] ?? $loan->total_due_amount;
+            $loan->monthly_payment = $data['monthly_payment'] ?? $loan->monthly_payment;
+            
+            if ($needsDateUpdate && isset($data['due_date'])) {
+                $loan->due_date = $data['due_date'];
+            }
+        }
     }
 }

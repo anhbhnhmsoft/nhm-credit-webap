@@ -84,7 +84,9 @@ class UserLoansForm
                             $name = $config['name'] ?? 'Gói vay';
                             $termMonth = $config['term_month'] ?? 0;
                             $interestRate = $config['interest_rate'] ?? 0;
-                            return [$package->id => "{$name} - {$termMonth} tháng - {$interestRate}%"];
+                            $minAmount = number_format($config['min_amount'] ?? 0);
+                            $maxAmount = number_format($config['max_amount'] ?? 0);
+                            return [$package->id => "{$name} - {$termMonth} tháng - {$interestRate}% (Hạn mức: {$minAmount} - {$maxAmount} VNĐ)"];
                         }))
                     ->searchable()
                     ->preload()
@@ -100,10 +102,14 @@ class UserLoansForm
                                 }
                                 $set('term_months', $config['term_month'] ?? 0);
                                 $set('interest_rate_year', $config['interest_rate'] ?? 0);
+                                $set('package_min_amount', $config['min_amount'] ?? 0);
+                                $set('package_max_amount', $config['max_amount'] ?? 0);
                             }
                         } else {
                             $set('term_months', 0);
                             $set('interest_rate_year', 0);
+                            $set('package_min_amount', 0);
+                            $set('package_max_amount', 0);
                         }
                     })
                     ->afterStateHydrated(function ($state, callable $set) {
@@ -116,6 +122,8 @@ class UserLoansForm
                                 }
                                 $set('term_months', $config['term_month'] ?? 0);
                                 $set('interest_rate_year', $config['interest_rate'] ?? 0);
+                                $set('package_min_amount', $config['min_amount'] ?? 0);
+                                $set('package_max_amount', $config['max_amount'] ?? 0);
                             }
                         }
                     }),
@@ -126,15 +134,39 @@ class UserLoansForm
                     ->required()
                     ->suffix('VND')
                     ->live(debounce: 1000)
+                    ->rules([
+                        function (callable $get) {
+                            return function (string $attribute, $value, \Closure $fail) use ($get) {
+                                $packageMinAmount = $get('package_min_amount') ?? 0;
+                                $packageMaxAmount = $get('package_max_amount') ?? 0;
+                                $amount = (float) $value;
+                                
+                                if ($packageMinAmount > 0 && $amount < $packageMinAmount) {
+                                    $fail("Số tiền vay phải tối thiểu " . number_format($packageMinAmount) . " VNĐ theo hạn mức gói vay.");
+                                }
+                                
+                                if ($packageMaxAmount > 0 && $amount > $packageMaxAmount) {
+                                    $fail("Số tiền vay không được vượt quá " . number_format($packageMaxAmount) . " VNĐ theo hạn mức gói vay.");
+                                }
+                            };
+                        }
+                    ])
+                    ->helperText(function (callable $get) {
+                        $packageMinAmount = $get('package_min_amount') ?? 0;
+                        $packageMaxAmount = $get('package_max_amount') ?? 0;
+                        
+                        if ($packageMinAmount > 0 || $packageMaxAmount > 0) {
+                            $minText = $packageMinAmount > 0 ? number_format($packageMinAmount) . ' VNĐ' : 'không giới hạn';
+                            $maxText = $packageMaxAmount > 0 ? number_format($packageMaxAmount) . ' VNĐ' : 'không giới hạn';
+                            return "Hạn mức gói vay: Tối thiểu {$minText}, Tối đa {$maxText}";
+                        }
+                        
+                        return null;
+                    })
                     ->afterStateUpdated(function ($state, callable $set, callable $get) {
                         if ($state && $get('interest_rate_year') && $get('term_months')) {
                             $service = app(LoanCalculationService::class);
-                            $totalDueAmount = $service->calcAmount(
-                                $state, 
-                                $get('interest_rate_year'), 
-                                $get('term_months'), 
-                                $get('service_fee_amount') ?? 0
-                            );
+                            $totalDueAmount = $service->calcAmount($state, $get('interest_rate_year'), $get('term_months'), $get('service_fee_amount') ?? 0);
                             $set('total_due_amount', $totalDueAmount);
                         }
                     }),
@@ -155,6 +187,20 @@ class UserLoansForm
                     ->suffix('%')
                     ->dehydrated(true),
 
+                TextInput::make('package_min_amount')
+                    ->label('Hạn mức tối thiểu gói vay')
+                    ->numeric()
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->hidden(),
+
+                TextInput::make('package_max_amount')
+                    ->label('Hạn mức tối đa gói vay')
+                    ->numeric()
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->hidden(),
+
                 TextInput::make('service_fee_amount')
                     ->label('Phí dịch vụ (VND)')
                     ->numeric()
@@ -165,12 +211,7 @@ class UserLoansForm
                     ->afterStateUpdated(function ($state, callable $set, callable $get) {
                         if ($state && $get('principal_amount') && $get('interest_rate_year') && $get('term_months')) {
                             $service = app(LoanCalculationService::class);
-                            $totalDueAmount = $service->calcAmount(
-                                $get('principal_amount'), 
-                                $get('interest_rate_year'), 
-                                $get('term_months'), 
-                                $state
-                            );
+                            $totalDueAmount = $service->calcAmount($get('principal_amount'), $get('interest_rate_year'), $get('term_months'), $state);
                             $set('total_due_amount', $totalDueAmount);
                         }
                     }),

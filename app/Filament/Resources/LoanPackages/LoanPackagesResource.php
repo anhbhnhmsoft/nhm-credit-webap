@@ -20,6 +20,12 @@ class LoanPackagesResource extends Resource
 {
     protected static ?string $model = LoanPackage::class;
 
+    protected static ?string $navigationLabel = 'Gói vay';
+
+    protected static ?string $modelLabel = 'Gói vay';
+
+    protected static ?string $pluralModelLabel = 'Gói vay';
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     public static function form(Schema $schema): Schema

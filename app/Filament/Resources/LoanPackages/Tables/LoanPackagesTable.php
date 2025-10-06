@@ -36,6 +36,16 @@ class LoanPackagesTable
                 ->alignCenter()
                 ->getStateUsing(fn ($record) => data_get($record->config_loans, 'penalty_rate', ''))
                 ->suffix('%'),
+            TextColumn::make('config_loans_min_amount')
+                ->label('Hạn mức tối thiểu')
+                ->alignCenter()
+                ->getStateUsing(fn ($record) => number_format(data_get($record->config_loans, 'min_amount', 0)))
+                ->suffix(' VNĐ'),
+            TextColumn::make('config_loans_max_amount')
+                ->label('Hạn mức tối đa')
+                ->alignCenter()
+                ->getStateUsing(fn ($record) => number_format(data_get($record->config_loans, 'max_amount', 0)))
+                ->suffix(' VNĐ'),
             TextColumn::make('config_loans_active')
                 ->label('Kích hoạt')
                 ->getStateUsing(fn ($record) => data_get($record->config_loans, 'active', false) ? 'Hoạt động' : 'Không hoạt động'),
