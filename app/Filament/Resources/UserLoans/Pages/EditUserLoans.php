@@ -43,7 +43,6 @@ class EditUserLoans extends EditRecord
     protected function mutateFormDataBeforeFill(array $data): array
     {
         $data = $this->fillAllRelatedInfo($data);
-        $data = $this->loanCalculationService->fillTotalAmount($data);
         
         return $data;
     }
@@ -51,7 +50,7 @@ class EditUserLoans extends EditRecord
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $data = $this->fillAllRelatedInfo($data);
-        $data = $this->loanCalculationService->fillTotalAmount($data);
+        $data = $this->loanCalculationService->calculateLoanData($data);
         
         return $data;
     }

@@ -32,6 +32,18 @@ class LoanPackagesForm
                         ->suffix('%')
                         ->minValue(0)
                         ->required(),
+                    TextInput::make('config_loans.min_amount')
+                        ->label('Số tiền vay tối thiểu (VNĐ)')
+                        ->numeric()
+                        ->minValue(0)
+                        ->required()
+                        ->helperText('Ví dụ: 1,000,000'),
+                    TextInput::make('config_loans.max_amount')
+                        ->label('Số tiền vay tối đa (VNĐ)')
+                        ->numeric()
+                        ->minValue(0)
+                        ->required()
+                        ->helperText('Ví dụ: 20,000,000'),
                     Toggle::make('config_loans.active')
                         ->label('Kích hoạt')
                         ->default(true),

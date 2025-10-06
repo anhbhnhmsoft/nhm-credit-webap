@@ -31,7 +31,7 @@ class CreateUserLoans extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data = $this->fillAllRelatedInfo($data);
-        $data = $this->loanCalculationService->fillTotalAmount($data);
+        $data = $this->loanCalculationService->calculateLoanData($data);
         
         return $data;
     }

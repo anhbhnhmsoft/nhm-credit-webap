@@ -49,24 +49,6 @@ class UserLoan extends Model
             if (empty($model->id)) {
                 $model->id = Helper::getTimestampAsId();
             }
-            
-            if (!$model->total_due_amount && $model->principal_amount && $model->interest_rate_year && $model->term_months) {
-                $model->total_due_amount = $model->calculateTotalDueAmount();
-            }
-            
-            if (!$model->due_date && $model->start_date && $model->term_months) {
-                $model->due_date = $model->start_date->addMonths($model->term_months);
-            }
-        });
-
-        static::updating(function ($model) {
-            if ($model->isDirty(['principal_amount', 'interest_rate_year', 'term_months', 'service_fee_amount'])) {
-                $model->total_due_amount = $model->calculateTotalDueAmount();
-            }
-            
-            if ($model->isDirty(['start_date', 'term_months'])) {
-                $model->due_date = $model->start_date->addMonths($model->term_months);
-            }
         });
     }
 

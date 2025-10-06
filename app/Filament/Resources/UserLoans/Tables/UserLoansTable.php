@@ -103,6 +103,7 @@ class UserLoansTable
                         ->form([
                             Select::make('mode')
                                 ->label('Chế độ')
+                                ->live()
                                 ->options([
                                     'approve_only' => 'Chỉ duyệt (chưa giải ngân)',
                                     'approve_and_disburse' => 'Duyệt và giải ngân',
@@ -114,14 +115,42 @@ class UserLoansTable
                                 ->default(now())
                                 ->visible(fn ($get) => $get('mode') === 'approve_and_disburse'),
                             TextInput::make('disbursed_amount')
-                                ->label('Số tiền giải ngân')
+                                ->label('Số tiền giải ngân (VNĐ)')
                                 ->numeric()
                                 ->default(fn ($record) => $record->principal_amount)
-                                ->visible(fn ($get) => $get('mode') === 'approve_and_disburse'),
+                                ->minValue(0)
+                                ->maxValue(fn ($record) => $record->principal_amount)
+                                ->suffix('VNĐ')
+                                ->helperText(function ($record) {
+                                    $principalAmount = number_format($record->principal_amount);
+                                    return "Số tiền vay: {$principalAmount} VNĐ. Số tiền giải ngân có thể nhỏ hơn hoặc bằng số tiền vay.";
+                                })
+                                ->visible(fn ($get) => $get('mode') === 'approve_and_disburse')
+                                ->required(fn ($get) => $get('mode') === 'approve_and_disburse'),
                         ])
                         ->action(function ($record, array $data) {
                             $isDisburse = ($data['mode'] ?? 'approve_only') === 'approve_and_disburse';
                             $disbursed = (float)($data['disbursed_amount'] ?? 0);
+
+                            if ($isDisburse) {
+                                if ($disbursed <= 0) {
+                                    Notification::make()
+                                        ->title('Lỗi')
+                                        ->body('Số tiền giải ngân phải lớn hơn 0.')
+                                        ->danger()
+                                        ->send();
+                                    return;
+                                }
+
+                                if ($disbursed > $record->principal_amount) {
+                                    Notification::make()
+                                        ->title('Lỗi')
+                                        ->body('Số tiền giải ngân không được vượt quá số tiền vay.')
+                                        ->danger()
+                                        ->send();
+                                    return;
+                                }
+                            }
 
                             $status = ($isDisburse && $disbursed > 0)
                                 ? LoanStatus::ACTIVE->value
@@ -138,8 +167,12 @@ class UserLoansTable
 
                             $record->update($updates);
 
+                            $message = $status === LoanStatus::ACTIVE->value 
+                                ? "Duyệt và giải ngân thành công. Số tiền giải ngân: " . number_format($disbursed) . " VNĐ"
+                                : 'Duyệt đơn vay thành công (chưa giải ngân)';
+
                             Notification::make()
-                                ->title($status === LoanStatus::ACTIVE->value ? 'Duyệt và giải ngân thành công' : 'Duyệt đơn vay thành công')
+                                ->title($message)
                                 ->success()
                                 ->send();
                         }),
