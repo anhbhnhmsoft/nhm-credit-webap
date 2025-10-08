@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\UserLoans\Tables;
 
+use App\Services\PaymentService;
 use App\Utils\Constants\LoanStatus;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -28,6 +29,7 @@ class UserLoansTable
     {
         return $table
             ->columns([
+                TextColumn::make('id')->label('ID')->searchable(),
                 TextColumn::make('user.name')->label('Khách hàng')->searchable(),
                 TextColumn::make('user.phone')->label('Số điện thoại')->searchable(),
                 TextColumn::make('loanPackage.config_loans.name')->label('Gói vay'),
@@ -162,10 +164,26 @@ class UserLoansTable
 
                             if ($status === LoanStatus::ACTIVE->value) {
                                 $updates['start_date'] = $data['start_date'] ?? now();
-                                $updates['disbursed_amount'] = $disbursed;
                             }
 
                             $record->update($updates);
+
+                            if ($isDisburse && $disbursed > 0) {
+                                try {
+                                    $paymentService = app(PaymentService::class);
+                                    $paymentService->createDisbursementPayment(
+                                        $record, 
+                                        $disbursed, 
+                                        "Giải ngân khoản vay #{$record->id} - " . number_format($disbursed) . " VNĐ"
+                                    );
+                                } catch (\Exception $e) {
+                                    Notification::make()
+                                        ->title('Lỗi tạo giao dịch thanh toán')
+                                        ->body('Đã duyệt khoản vay nhưng có lỗi khi tạo giao dịch thanh toán: ' . $e->getMessage())
+                                        ->warning()
+                                        ->send();
+                                }
+                            }
 
                             $message = $status === LoanStatus::ACTIVE->value 
                                 ? "Duyệt và giải ngân thành công. Số tiền giải ngân: " . number_format($disbursed) . " VNĐ"

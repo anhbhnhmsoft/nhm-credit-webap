@@ -3,22 +3,29 @@
 namespace App\Filament\Resources\UserLoans\Pages;
 
 use App\Filament\Resources\UserLoans\UserLoansResource;
+use App\Models\Payment;
 use App\Services\LoanCalculationService;
+use App\Services\PaymentService;
 use App\Traits\UserLoanFormLogic;
+use App\Utils\Constants\LoanStatus;
+use App\Utils\Constants\PaymentDirection;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Support\Facades\Log;
 
 class EditUserLoans extends EditRecord
 {
     use UserLoanFormLogic;
 
     protected LoanCalculationService $loanCalculationService;
+    protected PaymentService $paymentService;
 
-    public function boot(LoanCalculationService $loanCalculationService): void
+    public function boot(LoanCalculationService $loanCalculationService, PaymentService $paymentService): void
     {
         $this->loanCalculationService = $loanCalculationService;
+        $this->paymentService = $paymentService;
     }
 
     protected static string $resource = UserLoansResource::class;
@@ -43,7 +50,7 @@ class EditUserLoans extends EditRecord
     protected function mutateFormDataBeforeFill(array $data): array
     {
         $data = $this->fillAllRelatedInfo($data);
-        
+
         return $data;
     }
 
@@ -51,7 +58,40 @@ class EditUserLoans extends EditRecord
     {
         $data = $this->fillAllRelatedInfo($data);
         $data = $this->loanCalculationService->calculateLoanData($data);
-        
+
         return $data;
+    }
+
+    protected function afterSave(): void
+    {
+        $record = $this->getRecord();
+
+        if ($record->status === LoanStatus::ACTIVE->value && $record->disbursed_amount > 0) {
+            $existingPayment = Payment::where('user_loan_id', $record->id)
+                ->where('direction', PaymentDirection::OUT->value);
+
+            if ($existingPayment) {
+                $oldAmount = $existingPayment->amount;
+                $newAmount = $record->disbursed_amount;
+                
+                $existingPayment->update([
+                    'amount' => $newAmount,
+                    'description' => "Giải ngân khoản vay #{$record->id} - " . number_format($newAmount) . " VNĐ"
+                ]);
+
+                $record->update(['disbursed_amount' => $newAmount]);
+                
+                Log::info("Updated existing payment for loan #{$record->id}: {$oldAmount} -> {$newAmount}");
+            } else {
+                $disbursedAmount = $record->disbursed_amount;
+                $record->update(['disbursed_amount' => 0]);
+
+                $this->paymentService->createDisbursementPayment(
+                    $record,
+                    $disbursedAmount,
+                    "Giải ngân khoản vay #{$record->id} - " . number_format($disbursedAmount) . " VNĐ"
+                );
+            }
+        }
     }
 }

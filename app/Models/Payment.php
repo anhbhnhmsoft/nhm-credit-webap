@@ -22,7 +22,7 @@ class Payment extends Model
         'amount',
         'direction',
         'status',
-        'metadata',
+        'description',
     ];
 
     protected static function booted()
