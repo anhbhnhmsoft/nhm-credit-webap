@@ -166,6 +166,18 @@ return new class extends Migration
 			$table->softDeletes();
 			$table->timestamps();
 		});
+
+		Schema::create('page_statics', function (Blueprint $table) {
+            $table->id();
+            $table->text('icon_svg')->nullable()->comment('Icon SVG lấy từ Heroicons');
+            $table->string('title');
+            $table->text('content');
+            $table->integer('type')->default(1)->comment('Loại trang tĩnh, lưu trong enum PageStaticType');
+            $table->string('slug');
+            $table->tinyInteger('status')->comment('Trạng thái, lưu trong enum CommonStatus');
+            $table->softDeletes();
+            $table->timestamps();
+        });
     }
     /**
      * Reverse the migrations.
@@ -185,5 +197,6 @@ return new class extends Migration
 		Schema::dropIfExists('user_reset_codes');
 		Schema::dropIfExists('users');
 		Schema::dropIfExists('sessions');
+		Schema::dropIfExists('page_statics');
 	}
 };
