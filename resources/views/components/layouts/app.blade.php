@@ -10,8 +10,13 @@
 </head>
 
 <body style="color-scheme: light;" class="bg-white min-h-[100vh]">
-    <div class="w-full">
-        {{ $slot }}
+    <div class="min-h-screen flex justify-center">
+        <div class="w-[450px] min-h-screen bg-white flex flex-col">
+            <div class="flex-1">
+                {{ $slot }}
+            </div>
+            <x-layouts.footer />
+        </div>
     </div>
     @livewireScripts
 </body>
