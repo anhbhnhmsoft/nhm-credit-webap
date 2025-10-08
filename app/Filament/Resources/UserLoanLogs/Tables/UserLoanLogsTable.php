@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\UserLoanLogs\Tables;
 
+use App\Services\PaymentService;
 use App\Utils\Constants\LoanLogStatus;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -47,7 +48,7 @@ class UserLoanLogsTable
                     ->placeholder('Chưa thanh toán')
                     ->alignCenter(),
                 TextColumn::make('principal_due')
-                    ->label('Gốc')
+                    ->label('Tiền phải trả')
                     ->money('VND')
                     ->alignCenter(),
                 TextColumn::make('interest_due')
@@ -108,38 +109,70 @@ class UserLoanLogsTable
                             ->label('Số tiền thanh toán')
                             ->numeric()
                             ->default(fn($record) => max((float)($record->principal_due + $record->interest_due + $record->fee_due) - (float)($record->total_paid ?? 0), 0))
-                            ->visible(fn (Get $get) => $get('mode') === 'part'),
+                            ->visible(fn (Get $get) => $get('mode') === 'part')
+                            ->required(fn (Get $get) => $get('mode') === 'part'),
                     ])
                     ->action(function ($record, array $data) {
                         $mode = $data['mode'] ?? 'pay';
-                        $payAmount = (float)($data['payment_amount'] ?? 0);
                         $actualDate = $data['actual_due_date'] ?? now();
 
-                        $totalDue = (float)($record->principal_due + $record->interest_due + $record->fee_due);
-                        $currentPaid = (float)($record->total_paid ?? 0);
-
-                        $updates = [];
-
                         if ($mode === 'overdue') {
-                            $updates['status'] = LoanLogStatus::OVERDUE->value;
-                        } elseif ($mode === 'part') {
-                            $updates['total_paid'] = $currentPaid + max($payAmount, 0);
-                            $updates['actual_due_date'] = $actualDate;
-                            $updates['status'] = ($updates['total_paid'] >= $totalDue)
-                                ? LoanLogStatus::PAID->value
-                                : (defined('App\\Utils\\Constants\\LoanLogStatus::PARTIAL') ? LoanLogStatus::PARTIAL->value : LoanLogStatus::PENDING->value);
-                        } else { 
-                            $updates['total_paid'] = max($currentPaid + max($payAmount, 0), $totalDue);
-                            $updates['actual_due_date'] = $actualDate;
-                            $updates['status'] = LoanLogStatus::PAID->value;
+                            $record->update(['status' => LoanLogStatus::OVERDUE->value]);
+                            
+                            Notification::make()
+                                ->title('Đã đánh dấu quá hạn')
+                                ->success()
+                                ->send();
+                        } else {
+                            $totalDue = (float)($record->principal_due + $record->interest_due + $record->fee_due);
+                            $currentPaid = (float)($record->total_paid ?? 0);
+                            $remainingAmount = $totalDue - $currentPaid;
+                            
+                            $payAmount = $mode === 'pay'
+                                ? max($remainingAmount, 0)
+                                : (float)($data['payment_amount'] ?? 0);
+                            
+                            if ($payAmount <= 0) {
+                                Notification::make()
+                                    ->title('Lỗi')
+                                    ->body('Số tiền thanh toán phải lớn hơn 0')
+                                    ->danger()
+                                    ->send();
+                                return;
+                            }
+                            
+                            if ($payAmount > $remainingAmount) {
+                                Notification::make()
+                                    ->title('Lỗi')
+                                    ->body("Số tiền thanh toán ({$payAmount}) không được vượt quá số tiền còn lại ({$remainingAmount})")
+                                    ->danger()
+                                    ->send();
+                                return;
+                            }
+                            
+                            try {
+                                $paymentService = app(PaymentService::class);
+                                $payment = $paymentService->createLoanPayment(
+                                    $record, 
+                                    $payAmount, 
+                                    "Thanh toán kỳ {$record->installment_no} - " . number_format($payAmount) . " VNĐ"
+                                );
+                                
+                                $record->update(['actual_due_date' => $actualDate]);
+                                
+                                Notification::make()
+                                    ->title('Thanh toán thành công')
+                                    ->body("Đã tạo giao dịch thanh toán {$payment->transaction_code} với số tiền " . number_format($payAmount) . " VNĐ")
+                                    ->success()
+                                    ->send();
+                            } catch (\Exception $e) {
+                                Notification::make()
+                                    ->title('Lỗi tạo giao dịch thanh toán')
+                                    ->body('Có lỗi khi tạo giao dịch: ' . $e->getMessage())
+                                    ->danger()
+                                    ->send();
+                            }
                         }
-
-                        $record->update($updates);
-
-                        Notification::make()
-                            ->title('Cập nhật trạng thái thành công')
-                            ->success()
-                            ->send();
                     }),
             ])
             ->toolbarActions([
