@@ -27,6 +27,9 @@ return new class extends Migration
             $table->string('phone')->nullable()->comment('Số điện thoại');
             $table->string('address')->nullable()->comment('Địa chỉ');
             $table->text('introduce')->nullable()->comment('Giới thiệu bản thân');
+			$table->text('front_image_card')->nullable()->comment('Đường dẫn ảnh mặt trước CMND/CCCD');
+            $table->text('back_image_card')->nullable()->comment('Đường dẫn ảnh mặt sau CMND/CCCD');
+            $table->text('id_card_selfie_path')->nullable()->comment('Đường dẫn ảnh selfie CMND/CCCD');
             $table->tinyInteger('role')->comment('Vai trò người dùng, lưu trong enum RoleUser');
             $table->string('avatar_path')->nullable()->comment('Đường dẫn ảnh đại diện');
             $table->timestamp('email_verified_at')->nullable()->comment('Thời gian xác thực email');
