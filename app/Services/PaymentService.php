@@ -10,7 +10,6 @@ use App\Utils\Constants\PaymentStatus;
 use App\Utils\Constants\LoanLogStatus;
 use App\Utils\Helper;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class PaymentService
 {
@@ -29,13 +28,11 @@ class PaymentService
                 'description' => $description ?? "Giải ngân khoản vay #{$userLoan->id}",
             ]);
 
-            $userLoan->increment('disbursed_amount', $amount);
 
             DB::commit();
             return $payment;
         } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Error creating disbursement payment: ' . $e->getMessage());
             throw $e;
         }
     }
@@ -67,7 +64,6 @@ class PaymentService
             return $payment;
         } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Error creating loan payment: ' . $e->getMessage());
             throw $e;
         }
     }

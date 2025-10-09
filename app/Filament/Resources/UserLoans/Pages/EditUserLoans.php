@@ -68,29 +68,30 @@ class EditUserLoans extends EditRecord
 
         if ($record->status === LoanStatus::ACTIVE->value && $record->disbursed_amount > 0) {
             $existingPayment = Payment::where('user_loan_id', $record->id)
-                ->where('direction', PaymentDirection::OUT->value);
+                ->where('direction', PaymentDirection::OUT->value)
+                ->first();
 
             if ($existingPayment) {
-                $oldAmount = $existingPayment->amount;
                 $newAmount = $record->disbursed_amount;
                 
                 $existingPayment->update([
                     'amount' => $newAmount,
                     'description' => "Giải ngân khoản vay #{$record->id} - " . number_format($newAmount) . " VNĐ"
                 ]);
-
-                $record->update(['disbursed_amount' => $newAmount]);
                 
-                Log::info("Updated existing payment for loan #{$record->id}: {$oldAmount} -> {$newAmount}");
             } else {
                 $disbursedAmount = $record->disbursed_amount;
-                $record->update(['disbursed_amount' => 0]);
-
-                $this->paymentService->createDisbursementPayment(
-                    $record,
-                    $disbursedAmount,
-                    "Giải ngân khoản vay #{$record->id} - " . number_format($disbursedAmount) . " VNĐ"
-                );
+                
+                try {
+                    $this->paymentService->createDisbursementPayment(
+                        $record,
+                        $disbursedAmount,
+                        "Giải ngân khoản vay #{$record->id} - " . number_format($disbursedAmount) . " VNĐ"
+                    );
+                    
+                } catch (\Exception $e) {
+                    throw $e;
+                }
             }
         }
     }
