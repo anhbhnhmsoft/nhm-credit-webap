@@ -7,12 +7,17 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use App\Models\Bank;
+use App\Models\Config;
 use App\Models\User;
 use App\Utils\Constants\RoleUser;
 use Illuminate\Support\Facades\Hash;
 use App\Models\PageStatic;
 use App\Utils\Constants\CommonStatus;
+use App\Utils\Constants\ConfigName;
+use App\Utils\Constants\ConfigType;
 use App\Utils\Constants\PageStaticType;
+use App\Utils\Constants\StoragePath;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class InitApplication extends Command
@@ -71,6 +76,13 @@ class InitApplication extends Command
         if (!$r2) {
             DB::rollBack();
             $this->error('Lỗi khi chạy Seeding demo database r2!');
+            return Command::FAILURE;
+        }
+
+        $r3 = $this->seedingConfig();
+        if (!$r3) {
+            DB::rollBack();
+            $this->error('Lỗi khi chạy Seeding demo database r3!');
             return Command::FAILURE;
         }
 
@@ -138,6 +150,44 @@ class InitApplication extends Command
 
             return true;
         } catch (\Exception $exception) {
+            return false;
+        }
+    }
+
+    private function seedingConfig(): bool
+    {
+        $logoPath = StoragePath::makePath(StoragePath::CONFIG_PATH, 'logo.jpg');
+        Storage::disk('public')->put($logoPath, file_get_contents(public_path('images/logo.jpg')));
+
+        try {
+            Config::query()->insert([
+                [
+                    'config_key' => ConfigName::LOGO->value,
+                    'config_type' => ConfigType::IMAGE->value,
+                    'config_value' => $logoPath,
+                    'description' => 'Cấu hình logo website',
+                ],
+                [
+                    'config_key' => ConfigName::ADMIN_ACCOUNT_BANK_NAME->value,
+                    'config_type' => ConfigType::STRING->value,
+                    'config_value' => 'MAI VAN HUY',
+                    'description' => 'Chú thích: Tên chủ thể ngân hàng chính của hệ thống dùng để thanh toán',
+                ],
+                [
+                    'config_key' => ConfigName::ADMIN_ACCOUNT_BANK_ACCOUNT->value,
+                    'config_type' => ConfigType::STRING->value,
+                    'config_value' => '0125438569',
+                    'description' => 'Chú thích: Số tài khoản ngân hàng chính của hệ thống dùng để thanh toán',
+                ],
+                [
+                    'config_key' => ConfigName::ADMIN_ACCOUNT_BANK_BIN->value,
+                    'config_type' => ConfigType::STRING->value,
+                    'config_value' => '970422',
+                    'description' => 'Chú thích: Mã kiểm tra số tài khoản ngân hàng chính của hệ thống dùng để thanh toán',
+                ]
+            ]);
+            return true;
+        }catch (\Exception $exception){
             return false;
         }
     }
