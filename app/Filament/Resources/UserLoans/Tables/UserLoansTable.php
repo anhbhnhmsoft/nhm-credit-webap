@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\UserLoans\Tables;
 
 use App\Services\PaymentService;
+use App\Services\UserLoanLogService;
 use App\Utils\Constants\LoanStatus;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -178,6 +179,10 @@ class UserLoansTable
                                         $disbursed, 
                                         "Giải ngân khoản vay #{$record->id} - " . number_format($disbursed) . " VNĐ"
                                     );
+                                    
+                                    $userLoanLogService = app(UserLoanLogService::class);
+                                    $result = $userLoanLogService->generateLogsForLoan($record);
+                                    
                                 } catch (\Exception $e) {
                                     Notification::make()
                                         ->title('Lỗi tạo giao dịch thanh toán')
