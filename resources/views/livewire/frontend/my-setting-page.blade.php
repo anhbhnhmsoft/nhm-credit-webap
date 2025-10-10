@@ -14,8 +14,21 @@
         
         <div class="w-full bg-gray-50 min-h-screen p-4">
             <div class="bg-white rounded-lg p-6">
-                <h2 class="text-lg font-semibold mb-4">Thiết lập</h2>
-                <p class="text-gray-600">Trang này đang được phát triển...</p>
+
+                @if(!empty($logoUrl))
+                    <div class="mb-6 flex items-center space-x-3 justify-center">
+                        <img src="{{ route('public_image', ['file_path' => $logoUrl]) }}" alt="Logo" class="h-96 object-contain"/>
+                    </div>
+                @endif
+
+                @auth
+                    <form method="POST" action="{{ route('logout') }}" class="flex justify-center">
+                        @csrf
+                        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded">Đăng xuất</button>
+                    </form>
+                @else
+                    <a href="{{ route('login') }}" class="px-4 py-2 bg-blue-600 text-white rounded inline-block mx-auto">Đăng nhập</a>
+                @endauth
             </div>
         </div>
     </div>

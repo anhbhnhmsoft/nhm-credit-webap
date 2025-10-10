@@ -13,6 +13,7 @@ class LoanApplication extends Component
 
     public $tab = 'pending';
     public $loans = [];
+    public $loanLogs = [];
     public $message = '';
     protected $rules = [
         'tab' => 'required|in:pending,approved,paid',
@@ -51,6 +52,7 @@ class LoanApplication extends Component
     {
         if (!Auth::check()) {
             $this->loans = collect([]);
+            $this->loanLogs = collect([]);
             return;
         }
 
@@ -58,25 +60,27 @@ class LoanApplication extends Component
         
         switch ($this->tab) {
             case 'pending':
-                $this->loans = $allLoans->filter(function ($loan) {
-                    return in_array($loan->status, [2, 3]); // ACTIVE, OVERDUE
-                });
+                $this->loanLogs = $this->userLoanService->getUserLoanLogsDue(Auth::id());
+                $this->loans = collect([]);
                 break;
                 
             case 'approved':
                 $this->loans = $allLoans->filter(function ($loan) {
                     return in_array($loan->status, [1, 2]); // PENDING, APPROVED
                 });
+                $this->loanLogs = collect([]);
                 break;
                 
             case 'paid':
                 $this->loans = $allLoans->filter(function ($loan) {
                     return $loan->status == 5; // COMPLETED
                 });
+                $this->loanLogs = collect([]);
                 break;
                 
             default:
                 $this->loans = $allLoans;
+                $this->loanLogs = collect([]);
         }
     }
 

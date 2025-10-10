@@ -1,45 +1,34 @@
-@section('title', 'Đăng nhập')
+@section('title', 'Đăng Nhập')
 
-<div class="container mx-auto p-6">
-    <h2 class="text-2xl font-semibold text-center mb-6">Đăng nhập</h2>
+<div class="max-w-md mx-auto mt-10 bg-white shadow rounded p-6">
+    <h1 class="text-2xl font-bold mb-6 text-center">Đăng Nhập</h1>
 
-    <!-- Hiển thị thông báo lỗi hoặc thành công -->
-    @if(session('error'))
-        <div class="bg-red-500 text-white p-4 mb-4 rounded-md">
-            {{ session('error') }}
-        </div>
-    @endif
-
-    @if(session('success'))
-        <div class="bg-green-500 text-white p-4 mb-4 rounded-md">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    <!-- Form đăng nhập -->
-    <form action="{{ route('login.submit') }}" method="POST">
+    <form wire:submit.prevent="submit">
         @csrf
-
-        <div class="mb-4">
-            <label for="phone" class="block text-sm font-medium text-gray-700">Số điện thoại</label>
-            <input type="text" name="phone" id="phone" class="w-full p-3 border border-gray-300 rounded-md" 
-                   value="{{ old('phone') }}" required>
-            @error('phone')
-                <span class="text-red-500 text-sm">{{ $message }}</span>
-            @enderror
+        <div>
+            <label class="block text-sm font-medium mb-1">Số điện thoại</label>
+            <input type="tel" wire:model="phone" class="w-full border rounded px-3 py-2" placeholder="VD: 0865 643 858" required>
         </div>
 
-        <div class="mb-4">
-            <label for="otp" class="block text-sm font-medium text-gray-700">Mã OTP</label>
-            <input type="text" name="otp" id="otp" class="w-full p-3 border border-gray-300 rounded-md" 
-                   value="{{ old('otp') }}" required>
-            @error('otp')
-                <span class="text-red-500 text-sm">{{ $message }}</span>
-            @enderror
+        <div id="recaptcha-container" class="my-3"></div>
+
+        <div>
+            <label class="block text-sm font-medium mb-1">Mã OTP</label>
+            <input type="text" wire:model="otp" class="w-full border rounded px-3 py-2" placeholder="Nhập mã OTP" required maxlength="6">
         </div>
 
-        <div class="flex justify-center">
-            <button type="submit" class="px-6 py-3 bg-blue-500 text-white rounded-md">Đăng nhập</button>
+        <div class="flex space-x-2 mt-4">
+            <button type="button" id="send_otp" class="flex-1 bg-[#fef4bf] text-black font-bold py-2 px-4 rounded cursor-pointer" disabled onclick="sendOTP()">Gửi OTP</button>
+            <button type="submit" class="flex-1 bg-blue-600 text-white font-bold py-2 px-4 rounded">Đăng Nhập</button>
+            <button type="button" id="resend_otp" class="flex-1 bg-gray-500 text-white font-bold py-2 px-4 rounded hidden" onclick="resendOTP()">Gửi lại OTP</button>
         </div>
     </form>
+
+    @if (session()->has('error'))
+        <div class="mt-4 text-red-600 text-center">{{ session('error') }}</div>
+    @endif
+
+    <div class="mt-4 text-center">
+        <a href="{{ route('register') }}" class="text-black hover:underline">Chưa có tài khoản? Đăng ký</a>
+    </div>
 </div>

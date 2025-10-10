@@ -10,6 +10,7 @@ use App\Services\UserLoanLogService;
 use App\Services\ReportService;
 use App\Services\BankService;
 use App\Services\BankAccountService;
+use App\Services\NotificationService;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\App;
 use App\Services\UserLoanService;
@@ -30,6 +31,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(BankAccountService::class, fn($app) => new BankAccountService($app->make(\App\Services\AuthService::class)));
         $this->app->singleton(PageStaticService::class, fn() => new PageStaticService());
         $this->app->singleton(UserLoanService::class, fn() => new UserLoanService());
+        $this->app->singleton(NotificationService::class, fn() => new NotificationService());
     }
 
     /**
