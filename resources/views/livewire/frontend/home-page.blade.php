@@ -67,11 +67,11 @@
                                 @endif
                             </span>
                             <div class="ant-slider w-full mt-8" wire:ignore>
-                                <input type="range" id="loan-slider" class="range range-primary range-primary-color primary-color w-full" 
-                                       min="{{ $activeLoanPackage ? data_get($activeLoanPackage->config_loans, 'min_amount', 2000000) / 1000 : 2000 }}" 
-                                       max="{{ $activeLoanPackage ? data_get($activeLoanPackage->config_loans, 'max_amount', 20000000) / 1000 : 20000 }}" 
-                                       step="500" 
-                                       value="{{ $amount / 1000 }}" 
+                                <input type="range" id="loan-slider" class="range range-primary range-primary-color primary-color w-full"
+                                       min="{{ $activeLoanPackage ? data_get($activeLoanPackage->config_loans, 'min_amount', 2000000) / 1000 : 2000 }}"
+                                       max="{{ $activeLoanPackage ? data_get($activeLoanPackage->config_loans, 'max_amount', 20000000) / 1000 : 20000 }}"
+                                       step="500"
+                                       value="{{ $amount / 1000 }}"
                                        onchange="updateAmount(this)">
                             </div>
 
@@ -100,7 +100,7 @@
                                         @endphp
                                         @if(is_array($termMonths) && !empty($termMonths))
                                             @foreach($termMonths as $months)
-                                                <button 
+                                                <button
                                                     onclick="selectTerm({{ $months }})"
                                                     class="text-sm px-5 py-1 rounded-2xl cursor-pointer term-button {{ $selectedTermMonths == $months ? 'bg-yellow-400 text-black' : 'text-gray-400 border border-solid border-gray-500 border-opacity-25' }}"
                                                     data-months="{{ $months }}">
@@ -109,23 +109,23 @@
                                             @endforeach
                                         @else
                                             <button class="text-sm px-5 py-1 rounded-2xl bg-yellow-400 text-black cursor-pointer">
-                                                180 ngày
+                                                7 ngày
                                             </button>
                                         @endif
                                     @else
-                                        <button 
+                                        <button
                                             onclick="selectTerm(6)"
                                             class="text-sm px-5 py-1 rounded-2xl cursor-pointer term-button {{ $selectedTermMonths == 6 ? 'bg-yellow-400 text-black' : 'text-gray-400 border border-solid border-gray-500 border-opacity-25' }}"
-                                            data-months="6">180 ngày</button>
-                                        <button 
+                                            data-months="6">7 ngày</button>
+                                        <button
                                             onclick="selectTerm(12)"
                                             class="text-sm px-5 py-1 rounded-2xl cursor-pointer term-button {{ $selectedTermMonths == 12 ? 'bg-yellow-400 text-black' : 'text-gray-400 border border-solid border-gray-500 border-opacity-25' }}"
-                                            data-months="12">360 ngày</button>
+                                            data-months="12">14 ngày</button>
                                     @endif
                                 </div>
                             </div>
                         </div>
-                        <button 
+                        <button
                             onclick="submitWithAmount()"
                             class="w-[93vw] md:w-[400px] py-3 text-black text-center btn-custom rounded-3xl mt-5 font-semibold cursor-pointer">
                             Gửi yêu cầu
@@ -142,14 +142,14 @@
         var amount = slider.value;
         var formattedAmount = parseInt(amount).toLocaleString('vi-VN');
         document.getElementById('loan-amount').innerText = formattedAmount + "K";
-        
+
         document.getElementById('loan-slider').setAttribute('data-amount', amount * 1000);
     }
-    
+
     function getSliderAmount() {
         return parseInt(document.getElementById('loan-slider').getAttribute('data-amount') || document.getElementById('loan-slider').value * 1000);
     }
-    
+
     function selectTerm(months) {
         var buttons = document.querySelectorAll('.term-button');
         buttons.forEach(function(button) {
@@ -160,14 +160,14 @@
                 button.className = 'text-sm px-5 py-1 rounded-2xl cursor-pointer term-button text-gray-400 border border-solid border-gray-500 border-opacity-25';
             }
         });
-        
+
         Livewire.find('{{ $this->getId() }}').call('setSelectedTerm', months);
     }
-    
+
     function submitWithAmount() {
         var amount = getSliderAmount();
         console.log('Submitting with amount:', amount);
-        
+
         Livewire.find('{{ $this->getId() }}').call('submitLoanRequest', amount);
     }
 </script>

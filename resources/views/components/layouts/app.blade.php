@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" theme="light" data-theme="light">
 
 <head>
     <meta charset="utf-8">
@@ -7,6 +7,15 @@
     <title>@yield('title')</title>
     @vite(['resources/css/app.css'])
     @vite(['resources/js/app.js'])
+
+    <style>
+        :root,
+        html,
+        body {
+            color-scheme: only light !important;
+            forced-color-adjust: none;
+        }
+    </style>
     @livewireStyles
 </head>
 
