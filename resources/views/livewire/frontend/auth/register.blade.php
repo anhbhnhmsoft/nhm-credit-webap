@@ -14,49 +14,51 @@
 
     <h1 class="text-2xl font-bold mb-6 text-center">Đăng ký tài khoản</h1>
 
-    <form id="registerForm" class="space-y-4">
+    <form wire:submit.prevent="submit" class="space-y-4">
         @csrf
-        <div id="phone_input">
+        <div>
             <label class="block text-sm font-medium mb-1">Số điện thoại</label>
-            <input type="tel" id="phoneNumber" class="w-full border rounded px-3 py-2"
+            <input type="tel" wire:model="phone" class="w-full border rounded px-3 py-2"
                    placeholder="VD: 0865 643 858" required>
+            @error('phone') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
         </div>
 
-        <div class="mt-3">
+        <div>
             <label class="block text-sm font-medium mb-1">Họ và tên</label>
-            <input type="text" id="fullName" class="w-full border rounded px-3 py-2"
+            <input type="text" wire:model="fullName" class="w-full border rounded px-3 py-2"
                    placeholder="Nhập họ và tên" required>
+            @error('fullName') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
         </div>
 
-        <div class="mt-3">
-            <label class="block text-sm font-medium mb-1">Email</label>
-            <input type="email" id="email" class="w-full border rounded px-3 py-2"
+        <div>
+            <label class="block text-sm font-medium mb-1">Email (tùy chọn)</label>
+            <input type="email" wire:model="email" class="w-full border rounded px-3 py-2"
                    placeholder="Nhập email">
+            @error('email') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
         </div>
 
-        <div class="mt-3">
+        <div>
             <label class="block text-sm font-medium mb-1">Mật khẩu</label>
-            <input type="password" id="password" class="w-full border rounded px-3 py-2"
-                   placeholder="Nhập mật khẩu" required>
+            <input type="password" wire:model="password" class="w-full border rounded px-3 py-2"
+                   placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)" required>
+            @error('password') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
         </div>
 
-        <div id="recaptcha-container" class="my-3"></div>
-
-        <div class="flex space-x-2">
-            <button type="button" id="send_otp" onclick="sendOTP()" class="flex-1 bg-[#fef4bf] text-black font-bold py-2 px-4 rounded cursor-pointer" disabled>Gửi OTP</button>
+        <div>
+            <label class="block text-sm font-medium mb-1">Xác nhận mật khẩu</label>
+            <input type="password" wire:model="confirmPassword" class="w-full border rounded px-3 py-2"
+                   placeholder="Nhập lại mật khẩu" required>
+            @error('confirmPassword') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
         </div>
 
-        <div id="verification_input" class="hidden mt-4">
-            <label class="block text-sm font-medium mb-1">Mã OTP</label>
-            <input type="text" id="verification_code" class="w-full border rounded px-3 py-2" placeholder="Nhập mã OTP 6 số" maxlength="6">
-            <div class="flex space-x-2 mt-3">
-                <button type="button" class="flex-1 bg-green-600 text-white py-2 px-4 rounded" onclick="verifyOTP()">Xác thực OTP</button>
-                <button type="button" class="flex-1 bg-gray-200 text-black py-2 px-4 rounded" onclick="tryAgain()">Gửi lại OTP</button>
-            </div>
+        <div class="mt-6">
+            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700">Đăng ký</button>
         </div>
-
-        <div id="status" class="text-sm"></div>
     </form>
+
+    @if (session()->has('success'))
+        <div class="mt-4 text-green-600 text-center">{{ session('success') }}</div>
+    @endif
 
     <div class="mt-4 text-center">
         <a href="{{ route('login') }}" class="text-black hover:underline">
@@ -64,4 +66,3 @@
         </a>
     </div>
 </div>
-@vite('resources/js/firebase.js')

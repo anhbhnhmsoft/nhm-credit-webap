@@ -9,24 +9,25 @@ use App\Models\User;
 class LoginPage extends Component
 {
     public string $phone = '';
-    public string $otp = '';
+    public string $password = '';
 
     public function submit()
     {
         $this->validate([
             'phone' => 'required|string|max:20',
-            'otp' => 'required|string|size:6',
+            'password' => 'required|string|min:6',
         ]);
 
-        $user = User::where('phone', $this->phone)->first();
+        $credentials = [
+            'phone' => $this->phone,
+            'password' => $this->password,
+        ];
 
-        if (!$user) {
-            session()->flash('error', 'Số điện thoại chưa được đăng ký.');
-            return null;
+        if (Auth::attempt($credentials)) {
+            return redirect()->route('profile');
+        } else {
+            session()->flash('error', 'Số điện thoại hoặc mật khẩu không đúng.');
         }
-
-        Auth::login($user);
-        return redirect()->route('profile');
     }
 
     public function render()

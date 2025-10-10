@@ -5,22 +5,18 @@
 
     <form wire:submit.prevent="submit">
         @csrf
-        <div>
+        <div class="mb-4">
             <label class="block text-sm font-medium mb-1">Số điện thoại</label>
             <input type="tel" wire:model="phone" class="w-full border rounded px-3 py-2" placeholder="VD: 0865 643 858" required>
         </div>
 
-        <div id="recaptcha-container" class="my-3"></div>
-
-        <div>
-            <label class="block text-sm font-medium mb-1">Mã OTP</label>
-            <input type="text" wire:model="otp" class="w-full border rounded px-3 py-2" placeholder="Nhập mã OTP" required maxlength="6">
+        <div class="mb-4">
+            <label class="block text-sm font-medium mb-1">Mật khẩu</label>
+            <input type="password" wire:model="password" class="w-full border rounded px-3 py-2" placeholder="Nhập mật khẩu" required>
         </div>
 
-        <div class="flex space-x-2 mt-4">
-            <button type="button" id="send_otp" class="flex-1 bg-[#fef4bf] text-black font-bold py-2 px-4 rounded cursor-pointer" disabled onclick="sendOTP()">Gửi OTP</button>
-            <button type="submit" class="flex-1 bg-blue-600 text-white font-bold py-2 px-4 rounded">Đăng Nhập</button>
-            <button type="button" id="resend_otp" class="flex-1 bg-gray-500 text-white font-bold py-2 px-4 rounded hidden" onclick="resendOTP()">Gửi lại OTP</button>
+        <div class="mt-6">
+            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700">Đăng Nhập</button>
         </div>
     </form>
 
