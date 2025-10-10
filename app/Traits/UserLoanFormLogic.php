@@ -30,7 +30,6 @@ trait UserLoanFormLogic
                 if (!is_array($config)) {
                     $config = json_decode($config ?? '{}', true) ?: [];
                 }
-                $data['term_months'] = $config['term_month'] ?? 0;
                 $data['interest_rate_year'] = $config['interest_rate'] ?? 0;
             }
         }

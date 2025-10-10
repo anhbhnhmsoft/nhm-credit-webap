@@ -5,6 +5,8 @@ namespace App\Filament\Resources\LoanPackages\Schemas;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
+use Filament\Notifications\Notification;
+use App\Models\LoanPackage;
 
 class LoanPackagesForm
 {
@@ -17,9 +19,8 @@ class LoanPackagesForm
                         ->maxLength(255),
                     TextInput::make('config_loans.term_month')
                         ->label('Kỳ hạn (tháng)')
-                        ->numeric()
-                        ->minValue(1)
-                        ->required(),
+                        ->placeholder('6, 12, 18, 24')
+                        ->helperText('Nhập các tháng cách nhau bằng dấu phẩy. Ví dụ: 6, 12, 18, 24 tháng'),
                     TextInput::make('config_loans.interest_rate')
                         ->label('Lãi suất (%)')
                         ->numeric()
@@ -46,7 +47,22 @@ class LoanPackagesForm
                         ->helperText('Ví dụ: 20,000,000'),
                     Toggle::make('config_loans.active')
                         ->label('Kích hoạt')
-                        ->default(true),
+                        ->default(false)
+                        ->helperText('Chỉ có thể có 1 gói vay hoạt động tại một thời điểm')
+                        ->live()
+                        ->afterStateUpdated(function ($state, $component) {
+                            if ($state) {
+                                $activePackage = LoanPackage::whereJsonContains('config_loans->active', true)->first();
+                                
+                                if ($activePackage) {
+                                    Notification::make()
+                                        ->title('Cảnh báo')
+                                        ->body('Gói vay "' . data_get($activePackage->config_loans, 'name', '') . '" đang hoạt động. Khi lưu, gói này sẽ được tắt.')
+                                        ->warning()
+                                        ->send();
+                                }
+                            }
+                        }),
         ])->columns(2);
     }
 }

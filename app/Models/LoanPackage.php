@@ -21,7 +21,7 @@ class LoanPackage extends Model
     ];
 
     protected $attributes = [
-        'config_loans' => '{"name":"","term_month":0,"interest_rate":0,"penalty_rate":0,"min_amount":0,"max_amount":0,"active":false}',
+        'config_loans' => '{"name":"","term_month":[],"interest_rate":0,"penalty_rate":0,"min_amount":0,"max_amount":0,"active":false}',
     ];
 
     protected static function booted()

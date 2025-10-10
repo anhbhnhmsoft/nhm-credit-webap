@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Exceptions\ServiceException;
 use App\Services\ReportService;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
@@ -22,10 +23,13 @@ class CollectedAmountChartWidget extends ChartWidget
         $startDate = $this->pageFilters['startDate'] ?? Carbon::now()->subMonths(11)->startOfMonth();
         $endDate = $this->pageFilters['endDate'] ?? Carbon::now()->endOfMonth();
         
-        $collectedData = $this->reportService->getCollectedAmountReport($startDate, $endDate, 'monthly');
-        $totalCollected = number_format($collectedData['total_collected']);
-        
-        return "Số tiền đã thu về theo tháng ({$totalCollected} VND)";
+        try {
+            $collectedData = $this->reportService->getCollectedAmountReport($startDate, $endDate, 'monthly');
+            $totalCollected = number_format($collectedData['total_collected']);
+            return "Số tiền đã thu về theo tháng ({$totalCollected} VND)";
+        } catch (ServiceException $e) {
+            return "Số tiền đã thu về theo tháng (Không có dữ liệu)";
+        }
     }
 
     protected static ?int $sort = 3;
@@ -37,7 +41,23 @@ class CollectedAmountChartWidget extends ChartWidget
         $startDate = $this->pageFilters['startDate'] ?? Carbon::now()->subMonths(11)->startOfMonth();
         $endDate = $this->pageFilters['endDate'] ?? Carbon::now()->endOfMonth();
 
-        $collectedData = $this->reportService->getCollectedAmountReport($startDate, $endDate, 'monthly');
+        try {
+            $collectedData = $this->reportService->getCollectedAmountReport($startDate, $endDate, 'monthly');
+        } catch (ServiceException $e) {
+            return [
+                'datasets' => [
+                    [
+                        'label' => 'Số tiền thu về (VND)',
+                        'data' => [],
+                        'borderColor' => 'rgb(34, 197, 94)',
+                        'backgroundColor' => 'rgba(34, 197, 94, 0.1)',
+                        'fill' => true,
+                        'tension' => 0.4,
+                    ],
+                ],
+                'labels' => [],
+            ];
+        }
 
         $labels = [];
         $data = [];

@@ -12,6 +12,7 @@ class PageStatic extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'icon_svg',
         'title',
         'content',
         'slug',

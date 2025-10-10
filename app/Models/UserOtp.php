@@ -6,18 +6,15 @@ use App\Utils\Helper;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
-class UserBankAccount extends Model
+class UserOtp extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $fillable = [
         'user_id',
-        'bank_id',
-        'account_number',
-        'account_name',
-        'is_verified',
+        'otp',
+        'expires_at',
     ];
 
     protected static function booted()
@@ -28,14 +25,10 @@ class UserBankAccount extends Model
             }
         });
     }
-    
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
-
-    public function bank(): BelongsTo
-    {
-        return $this->belongsTo(Bank::class);
-    }
 }
+
