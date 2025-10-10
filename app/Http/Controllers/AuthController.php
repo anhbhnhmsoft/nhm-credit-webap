@@ -244,4 +244,25 @@ class AuthController extends Controller
 
         return redirect()->route('login')->with('success', __('auth.success.logout_success'));
     }
+
+    public function registerPhone(Request $request)
+    {
+        $request->validate([
+            'phone' => 'required|string|max:20|unique:users,phone',
+        ]);
+
+        return view('livewire.frontend.auth.register-info', ['phone' => $request->phone]);
+    }
+
+    public function submitPersonalInfo(Request $request)
+    {
+        $request->validate([
+            'fullName' => 'required|string|max:255',
+            'email' => 'nullable|email|max:255|unique:users,email',
+            'password' => 'required|string|min:6',
+            'confirmPassword' => 'required|same:password',
+        ]);
+    }
+
+    public function submitCardInfo(Request $request) {}
 }

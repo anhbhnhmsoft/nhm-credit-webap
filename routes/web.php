@@ -10,6 +10,10 @@ use App\Livewire\Frontend\PageStaticPage;
 use App\Http\Controllers\FileController;
 use App\Livewire\Frontend\LoanApplication;
 use App\Livewire\Frontend\RegisterPage;
+use App\Livewire\Frontend\RegisterPhone;
+use App\Livewire\Frontend\RegisterInfo;
+use App\Livewire\Frontend\RegisterCardInfo;
+use App\Livewire\Frontend\LoginPage;
 
 Route::get('/', HomePage::class)->name('home');
 Route::get('/pages/{slug}', PageStaticPage::class)->name('frontend.page-static');
@@ -27,5 +31,9 @@ Route::get('/image/{file_path}', [FileController::class, 'image'])
 Route::get('/register', RegisterPage::class)->name('register');
 
 Route::post('/auth/register/submit', [AuthController::class, 'registerSubmit'])->name('auth.register.submit');
-Route::get('/login', [AuthController::class, 'loginForm'])->name('login');
-Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
+Route::get('/login', LoginPage::class)->name('login');
+Route::post('/login', [LoginPage::class, 'login'])->name('login.submit');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::get('/register-phone', RegisterPhone::class)->name('register.phone');
+Route::get('/register-info', RegisterInfo::class)->name('register.info');
+Route::get('/register-card-info', RegisterCardInfo::class)->name('register.card.info');

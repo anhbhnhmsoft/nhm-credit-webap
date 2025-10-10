@@ -136,7 +136,7 @@
         <div class="w-full p-4">
             <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded">
                 {{ $message }}
-                <a href="" class="underline ml-1">Đăng nhập</a>
+                <a href="{{ route('login') }}" class="underline ml-1">Đăng nhập</a>
             </div>
         </div>
     @endif
