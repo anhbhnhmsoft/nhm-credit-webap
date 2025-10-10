@@ -97,7 +97,6 @@
                                     @endforeach
                                 @else
                                     <div class="text-base text-[var(--primary)]">2.000.000</div>
-                                    <div class="text-base text-[var(--primary)]">6.500.000</div>
                                     <div class="text-base text-[var(--primary)]">11.000.000.</div>
                                     <div class="text-base text-[var(--primary)]">15.500.000</div>
                                     <div class="text-base text-[var(--primary)]">20.000.000</div>
