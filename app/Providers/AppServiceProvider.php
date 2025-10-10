@@ -4,11 +4,15 @@ namespace App\Providers;
 
 use App\Services\AuthService;
 use App\Services\LoanCalculationService;
+use App\Services\PageStaticService;
 use App\Services\PaymentService;
 use App\Services\UserLoanLogService;
 use App\Services\ReportService;
+use App\Services\BankService;
+use App\Services\BankAccountService;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\App;
+use App\Services\UserLoanService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,6 +26,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(PaymentService::class, fn() => new PaymentService());
         $this->app->singleton(UserLoanLogService::class, fn() => new UserLoanLogService());
         $this->app->singleton(ReportService::class, fn() => new ReportService());
+        $this->app->singleton(BankService::class, fn() => new BankService());
+        $this->app->singleton(BankAccountService::class, fn($app) => new BankAccountService($app->make(\App\Services\AuthService::class)));
+        $this->app->singleton(PageStaticService::class, fn() => new PageStaticService());
+        $this->app->singleton(UserLoanService::class, fn() => new UserLoanService());
     }
 
     /**

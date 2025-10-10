@@ -4,7 +4,6 @@ namespace App\Utils;
 
 use Carbon\Carbon;
 use Illuminate\Contracts\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Crypt;
 
 final class Helper
 {
@@ -69,19 +68,6 @@ final class Helper
 
         [$hour, $minute] = explode(':', $time);
         return ((int) $hour) * 60 + ((int) $minute);
-    }
-
-    //Tạo URL đăng ký nhanh cho event với token mã hóa.
-    public static function quickRegisterUrl($event): string
-    {
-        $payload = [
-            'event_id' => $event->id,
-        ];
-
-        $token = Crypt::encryptString(json_encode($payload));
-
-
-        return route('events.quick-register', ['token' => $token]);
     }
 
     public static function generateQRCodeBanking($binBank, $bankNumber, $bankName, $amount, $addInfo = null): string

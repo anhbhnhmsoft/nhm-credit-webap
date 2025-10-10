@@ -47,7 +47,7 @@ class LoanCalculationService
             $totalDueAmount = $this->calcAmount(
                 $data['principal_amount'],
                 $data['interest_rate_year'],
-                $data['term_months'],
+                (int) $data['term_months'],
                 $data['service_fee_amount'] ?? 0
             );
             
@@ -66,7 +66,7 @@ class LoanCalculationService
                 ? \Carbon\Carbon::parse($data['start_date']) 
                 : $data['start_date'];
             
-            $data['due_date'] = $startDate->copy()->addMonths($data['term_months']);
+            $data['due_date'] = $startDate->copy()->addMonths((int) $data['term_months']);
         }
         
         if (isset($data['principal_amount']) && 
@@ -76,7 +76,7 @@ class LoanCalculationService
             $data['monthly_payment'] = $this->calcMonthlyPayment(
                 $data['principal_amount'],
                 null,
-                $data['term_months'],
+                (int) $data['term_months'],
                 $data['interest_rate_year']
             );
         }

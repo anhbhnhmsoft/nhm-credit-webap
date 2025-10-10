@@ -28,6 +28,7 @@ class UserLoansTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('id')->label('ID')->searchable(),
                 TextColumn::make('user.name')->label('Khách hàng')->searchable(),
@@ -164,6 +165,7 @@ class UserLoansTable
 
                             if ($status === LoanStatus::ACTIVE->value) {
                                 $updates['start_date'] = $data['start_date'] ?? now();
+                                $updates['disbursed_amount'] = $disbursed;
                             }
 
                             $record->update($updates);

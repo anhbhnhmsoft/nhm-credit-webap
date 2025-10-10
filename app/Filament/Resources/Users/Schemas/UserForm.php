@@ -100,8 +100,17 @@ class UserForm
                             ->disk('public')
                             ->directory('id-cards')
                             ->visibility('public')
-                            ->required()
-                            ->columnSpanFull(),
+							->required()
+							->columnSpanFull(),
+						FileUpload::make('id_card_selfie_path')
+							->label('Ảnh chụp chung với mặt trước CMND/CCCD')
+							->image()
+							->imageEditor()
+							->disk('public')
+							->directory('id-cards')
+							->visibility('public')
+							->nullable()
+							->columnSpanFull(),
                         ])
                         ->columns(2),
                     

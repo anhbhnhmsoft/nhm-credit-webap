@@ -82,7 +82,8 @@ class UserLoansForm
                                 $config = json_decode($config ?? '{}', true) ?: [];
                             }
                             $name = $config['name'] ?? 'Gói vay';
-                            $termMonth = $config['term_month'] ?? 0;
+                            $termMonths = $config['term_month'] ?? [0];
+                            $termMonth = is_array($termMonths) ? ($termMonths[0] ?? 0) : $termMonths;
                             $interestRate = $config['interest_rate'] ?? 0;
                             $minAmount = number_format($config['min_amount'] ?? 0);
                             $maxAmount = number_format($config['max_amount'] ?? 0);
@@ -100,13 +101,11 @@ class UserLoansForm
                                 if (!is_array($config)) {
                                     $config = json_decode($config ?? '{}', true) ?: [];
                                 }
-                                $set('term_months', $config['term_month'] ?? 0);
                                 $set('interest_rate_year', $config['interest_rate'] ?? 0);
                                 $set('package_min_amount', $config['min_amount'] ?? 0);
                                 $set('package_max_amount', $config['max_amount'] ?? 0);
                             }
                         } else {
-                            $set('term_months', 0);
                             $set('interest_rate_year', 0);
                             $set('package_min_amount', 0);
                             $set('package_max_amount', 0);
@@ -120,7 +119,7 @@ class UserLoansForm
                                 if (!is_array($config)) {
                                     $config = json_decode($config ?? '{}', true) ?: [];
                                 }
-                                $set('term_months', $config['term_month'] ?? 0);
+                                // Không tự động set term_months, để admin chọn từ dropdown
                                 $set('interest_rate_year', $config['interest_rate'] ?? 0);
                                 $set('package_min_amount', $config['min_amount'] ?? 0);
                                 $set('package_max_amount', $config['max_amount'] ?? 0);
@@ -165,19 +164,60 @@ class UserLoansForm
                     })
                     ->afterStateUpdated(function ($state, callable $set, callable $get) {
                         if ($state && $get('interest_rate_year') && $get('term_months')) {
-                            $service = app(LoanCalculationService::class);
+                            $service = app(\App\Services\LoanCalculationService::class);
                             $totalDueAmount = $service->calcAmount($state, $get('interest_rate_year'), $get('term_months'), $get('service_fee_amount') ?? 0);
                             $set('total_due_amount', $totalDueAmount);
                         }
                     }),
 
-                TextInput::make('term_months')
+                Select::make('term_months')
                     ->label('Kỳ hạn (tháng)')
-                    ->numeric()
+                    ->options(function (callable $get) {
+                        $packageId = $get('loan_package_id');
+                        if (!$packageId) {
+                            return [];
+                        }
+                        
+                        $package = LoanPackage::find($packageId);
+                        if (!$package) {
+                            return [];
+                        }
+                        
+                        $config = $package->config_loans;
+                        if (!is_array($config)) {
+                            $config = json_decode($config ?? '{}', true) ?: [];
+                        }
+                        
+                        $termMonths = $config['term_month'] ?? [];
+                        if (!is_array($termMonths)) {
+                            $termMonths = [$termMonths];
+                        }
+                        
+                        $options = [];
+                        foreach ($termMonths as $month) {
+                            $options[$month] = $month . ' tháng';
+                        }
+                        
+                        return $options;
+                    })
                     ->required()
-                    ->disabled()
-                    ->suffix('tháng')
-                    ->dehydrated(true),
+                    ->reactive()
+                    ->live(debounce: 1000)
+                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                        $termMonths = (int) $state;
+                        
+                        if ($termMonths && $get('principal_amount') && $get('interest_rate_year')) {
+                            $service = app(LoanCalculationService::class);
+                            $totalDueAmount = $service->calcAmount($get('principal_amount'), $get('interest_rate_year'), $termMonths, $get('service_fee_amount') ?? 0);
+                            $set('total_due_amount', $totalDueAmount);
+                        }
+                        
+                        if ($termMonths && $get('start_date')) {
+                            $startDate = Carbon::parse($get('start_date'));
+                            $dueDate = $startDate->copy()->addMonths($termMonths);
+                            $set('due_date', $dueDate);
+                        }
+                    }),
 
                 TextInput::make('interest_rate_year')
                     ->label('Lãi suất năm (%)')
@@ -210,7 +250,7 @@ class UserLoansForm
                     ->live(debounce: 1000)
                     ->afterStateUpdated(function ($state, callable $set, callable $get) {
                         if ($state && $get('principal_amount') && $get('interest_rate_year') && $get('term_months')) {
-                            $service = app(LoanCalculationService::class);
+                            $service = app(\App\Services\LoanCalculationService::class);
                             $totalDueAmount = $service->calcAmount($get('principal_amount'), $get('interest_rate_year'), $get('term_months'), $state);
                             $set('total_due_amount', $totalDueAmount);
                         }
@@ -241,7 +281,10 @@ class UserLoansForm
                     ->live(debounce: 1000)
                     ->afterStateUpdated(function ($state, callable $set, callable $get) {
                         if ($state && $get('term_months')) {
-                            $set('due_date', ($state instanceof Carbon ? $state->copy() : Carbon::parse($state))->addMonths((int) $get('term_months')));
+                            $termMonths = (int) $get('term_months');
+                            $startDate = $state instanceof Carbon ? $state->copy() : Carbon::parse($state);
+                            $dueDate = $startDate->addMonths($termMonths);
+                            $set('due_date', $dueDate);
                         }
                     }),
 

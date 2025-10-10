@@ -11,11 +11,13 @@
 
 <body style="color-scheme: light;" class="bg-white min-h-[100vh]">
     <div class="min-h-screen flex justify-center">
-        <div class="w-[450px] min-h-screen bg-white flex flex-col">
-            <div class="flex-1">
+        <div class="w-[450px] min-h-screen bg-white flex flex-col relative">
+            <div class="flex-1 pb-16">
                 {{ $slot }}
             </div>
-            <x-layouts.footer />
+            <div class="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-[450px] z-50">
+                <x-layouts.footer />
+            </div>
         </div>
     </div>
     @livewireScripts
