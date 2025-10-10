@@ -39,7 +39,7 @@ class UserLoan extends Model
         'total_paid_amount' => 'decimal:2',
         'start_date' => 'date',
         'due_date' => 'date',
-        'term_months' => 'integer',
+        'term_months' => 'string',
         'status' => 'integer',
     ];
 

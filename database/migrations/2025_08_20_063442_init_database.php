@@ -23,7 +23,7 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name')->comment('Họ và tên người dùng');
-            $table->string('email')->unique()->comment('Email đăng nhập');
+            $table->string('email')->nullable()->unique()->comment('Email đăng nhập');
             $table->string('phone')->nullable()->comment('Số điện thoại');
             $table->string('address')->nullable()->comment('Địa chỉ');
             $table->text('introduce')->nullable()->comment('Giới thiệu bản thân');
@@ -107,11 +107,15 @@ return new class extends Migration
 		// Bảng để lưu trữ các khoản vay của người dùng
 		Schema::create('user_loans', function (Blueprint $table) {
 			$table->id();
-			$table->foreignId('user_id')->constrained()->cascadeOnDelete()->comment('ID người dùng');
+			$table->foreignId('user_id')->nullable()->constrained()->cascadeOnDelete()->comment('ID người dùng');
+			$table->string('user_name')->nullable()->comment('Tên người dùng (để hiển thị độc lập)');
+			$table->string('user_phone')->nullable()->comment('Số điện thoại người dùng');
+			$table->string('user_email')->nullable()->comment('Email người dùng');
+			$table->string('user_address')->nullable()->comment('Số CCCD/CMND người dùng');
 			$table->foreignId('loan_package_id')->nullable()->constrained()->nullOnDelete()->comment('ID gói vay');
 			$table->unsignedBigInteger('principal_amount')->comment('Số tiền gốc vay');
-			$table->unsignedSmallInteger('term_months')->comment('Kỳ hạn vay (tháng)');
-			$table->decimal('interest_rate_year', 5, 2)->comment('Lãi suất năm (%)');
+			$table->string('term_months')->comment('Kỳ hạn vay (tháng)');
+			$table->decimal('interest_rate_year', 12, 2)->comment('Lãi suất năm (%)');
 			$table->decimal('service_fee_amount', 12, 2)->default(0)->comment('Phí dịch vụ (VND)');
 			$table->decimal('disbursed_amount', 12, 2)->default(0)->comment('Số tiền đã giải ngân');
 			$table->date('start_date')->nullable()->comment('Ngày bắt đầu vay');

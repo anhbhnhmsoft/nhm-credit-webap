@@ -32,29 +32,38 @@ class UserLoansTable
             ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('id')->label('ID')->searchable(),
-                TextColumn::make('user.name')->label('Khách hàng')->searchable(),
-                TextColumn::make('user.phone')->label('Số điện thoại')->searchable(),
-                TextColumn::make('loanPackage.config_loans.name')->label('Gói vay'),
+                TextColumn::make('user.name')
+                    ->label('Khách hàng')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('user.phone')
+                    ->label('Số điện thoại')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('user.address')
+                    ->label('CCCD/CMND')
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('principal_amount')
                     ->label('Số tiền vay')
                     ->money('VND')
                     ->sortable(),
                 TextColumn::make('term_months')
-                ->label('Kỳ hạn (tháng)')
-                ->alignCenter(),
+                    ->label('Kỳ hạn')
+                    ->alignCenter(),
                 TextColumn::make('interest_rate_year')
-                    ->label('Lãi suất')
-                    ->suffix('%')
+                    ->label('Phí quá hạn')
+                    ->money('VND')
                     ->alignCenter()
                     ->sortable(),
                 TextColumn::make('start_date')
-                ->label('Ngày vay')
-                ->date('d/m/Y')
-                ->alignCenter(),
+                    ->label('Ngày vay')
+                    ->date('d/m/Y')
+                    ->alignCenter(),
                 TextColumn::make('due_date')
-                ->label('Ngày tất toán')
-                ->date('d/m/Y')
-                ->alignCenter(),
+                    ->label('Ngày tất toán')
+                    ->date('d/m/Y')
+                    ->alignCenter(),
                 BadgeColumn::make('status')
                     ->label('Trạng thái')
                     ->alignCenter()
@@ -70,8 +79,8 @@ class UserLoansTable
                     ->label('Đã giải ngân')
                     ->alignCenter()
                     ->money('VND'),
-                TextColumn::make('monthly_payment')
-                    ->label('Trả hàng tháng')
+                TextColumn::make('total_due_amount')
+                    ->label('Tổng phải trả')
                     ->alignCenter()
                     ->money('VND'),
                 TextColumn::make('total_paid_amount')
@@ -91,7 +100,7 @@ class UserLoansTable
                     ]),
                 TrashedFilter::make(),
             ])
-            ->searchable(['user.name', 'user.phone', 'id'])
+            ->searchable(['user.name', 'user.phone', 'user.email', 'user.address', 'id'])
             ->defaultSort('created_at', 'desc')
             ->recordActions([
                 ActionGroup::make([

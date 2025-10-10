@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\UserLoans\Schemas;
 
+use App\Models\Bank;
 use App\Models\LoanPackage;
 use App\Models\User;
 use App\Services\LoanCalculationService;
@@ -9,6 +10,7 @@ use App\Utils\Constants\LoanStatus;
 use App\Utils\Constants\RoleUser;
 use Carbon\Carbon;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -21,14 +23,14 @@ class UserLoansForm
         return $schema
             ->components([
                 Select::make('user_id')
-                    ->label('Khách hàng')
-                    ->options(fn () => User::query()
+                    ->label('Chọn khách hàng')
+                    ->options(fn() => User::query()
                         ->where('role', RoleUser::CUSTOMER->value)
                         ->orderBy('name')
                         ->pluck('name', 'id'))
                     ->searchable()
                     ->preload()
-                    ->required()
+                    ->placeholder('Chọn khách hàng có sẵn hoặc để trống để tạo mới')
                     ->reactive()
                     ->afterStateUpdated(function ($state, callable $set) {
                         if ($state) {
@@ -37,11 +39,30 @@ class UserLoansForm
                                 $set('user_name', $user->name);
                                 $set('user_phone', $user->phone);
                                 $set('user_email', $user->email);
+                                $set('user_address', $user->address);
+                                $set('front_image_card', $user->front_image_card);
+                                $set('back_image_card', $user->back_image_card);
+                                $set('id_card_selfie_path', $user->id_card_selfie_path);
+                                
+                                // Lấy thông tin ngân hàng
+                                $bankAccount = \App\Models\UserBankAccount::where('user_id', $state)->first();
+                                if ($bankAccount) {
+                                    $set('bank_id', $bankAccount->bank_id);
+                                    $set('account_number', $bankAccount->account_number);
+                                    $set('account_name', $bankAccount->account_name);
+                                }
                             }
                         } else {
                             $set('user_name', null);
                             $set('user_phone', null);
                             $set('user_email', null);
+                            $set('user_address', null);
+                            $set('front_image_card', null);
+                            $set('back_image_card', null);
+                            $set('id_card_selfie_path', null);
+                            $set('bank_id', null);
+                            $set('account_number', null);
+                            $set('account_name', null);
                         }
                     })
                     ->afterStateHydrated(function ($state, callable $set) {
@@ -51,216 +72,138 @@ class UserLoansForm
                                 $set('user_name', $user->name);
                                 $set('user_phone', $user->phone);
                                 $set('user_email', $user->email);
+                                $set('user_address', $user->address);
+                                $set('front_image_card', $user->front_image_card);
+                                $set('back_image_card', $user->back_image_card);
+                                $set('id_card_selfie_path', $user->id_card_selfie_path);
+                                
+                                // Lấy thông tin ngân hàng
+                                $bankAccount = \App\Models\UserBankAccount::where('user_id', $state)->first();
+                                if ($bankAccount) {
+                                    $set('bank_id', $bankAccount->bank_id);
+                                    $set('account_number', $bankAccount->account_number);
+                                    $set('account_name', $bankAccount->account_name);
+                                }
                             }
                         }
                     }),
 
                 TextInput::make('user_name')
                     ->label('Tên khách hàng')
-                    ->disabled()
-                    ->dehydrated(false),
+                    ->required()
+                    ->placeholder('Nhập tên khách hàng')
+                    ->live(debounce: 500)
+                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                        if ($state && !$get('user_id')) {
+                            $set('user_phone', null);
+                            $set('user_email', null);
+                            $set('user_address', null);
+                            $set('front_image_card', null);
+                            $set('back_image_card', null);
+                            $set('id_card_selfie_path', null);
+                        }
+                    }),
 
                 TextInput::make('user_phone')
                     ->label('Số điện thoại')
-                    ->disabled()
-                    ->dehydrated(false),
+                    ->required()
+                    ->placeholder('Nhập số điện thoại')
+                    ->live(debounce: 500)
+                    ->rules([
+                        function (callable $get) {
+                            return function (string $attribute, $value, \Closure $fail) use ($get) {
+                                if (!empty($value) && !$get('user_id')) {
+                                    $existingUser = \App\Models\User::where('phone', $value)->first();
+                                    if ($existingUser) {
+                                        $fail("Số điện thoại '{$value}' đã được sử dụng bởi người dùng khác.");
+                                    }
+                                }
+                            };
+                        },
+                    ]),
 
                 TextInput::make('user_email')
                     ->label('Email')
-                    ->disabled()
-                    ->dehydrated(false),
+                    ->email()
+                    ->placeholder('Nhập email khách hàng')
+                    ->live(debounce: 500)
+                    ->rules([
+                        function (callable $get) {
+                            return function (string $attribute, $value, \Closure $fail) use ($get) {
+                                if (!empty($value) && !$get('user_id')) {
+                                    $existingUser = \App\Models\User::where('email', $value)->first();
+                                    if ($existingUser) {
+                                        $fail("Email '{$value}' đã được sử dụng bởi người dùng khác.");
+                                    }
+                                }
+                            };
+                        },
+                    ]),
 
-                Select::make('loan_package_id')
-                    ->label('Gói vay')
-                    ->options(fn () => LoanPackage::query()
-                        ->where('config_loans->active', true)
-                        ->orderBy('id')
-                        ->get()
-                        ->mapWithKeys(function ($package) {
-                            $config = $package->config_loans;
-                            if (!is_array($config)) {
-                                $config = json_decode($config ?? '{}', true) ?: [];
-                            }
-                            $name = $config['name'] ?? 'Gói vay';
-                            $termMonths = $config['term_month'] ?? [0];
-                            $termMonth = is_array($termMonths) ? ($termMonths[0] ?? 0) : $termMonths;
-                            $interestRate = $config['interest_rate'] ?? 0;
-                            $minAmount = number_format($config['min_amount'] ?? 0);
-                            $maxAmount = number_format($config['max_amount'] ?? 0);
-                            return [$package->id => "{$name} - {$termMonth} tháng - {$interestRate}% (Hạn mức: {$minAmount} - {$maxAmount} VNĐ)"];
-                        }))
+                TextInput::make('user_address')
+                    ->label('CCCD/CMND')
+                    ->required()
+                    ->placeholder('Nhập số CCCD/CMND')
+                    ->live(debounce: 500),
+
+                Select::make('bank_id')
+                    ->label('Ngân hàng')
+                    ->required()
+                    ->options(fn() => Bank::query()
+                        ->orderBy('name')
+                        ->pluck('name', 'id'))
                     ->searchable()
                     ->preload()
+                    ->placeholder('Chọn ngân hàng'),
+
+                TextInput::make('account_number')
+                    ->label('Số tài khoản')
                     ->required()
-                    ->reactive()
-                    ->afterStateUpdated(function ($state, callable $set) {
-                        if ($state) {
-                            $package = LoanPackage::find($state);
-                            if ($package) {
-                                $config = $package->config_loans;
-                                if (!is_array($config)) {
-                                    $config = json_decode($config ?? '{}', true) ?: [];
-                                }
-                                $set('interest_rate_year', $config['interest_rate'] ?? 0);
-                                $set('package_min_amount', $config['min_amount'] ?? 0);
-                                $set('package_max_amount', $config['max_amount'] ?? 0);
-                            }
-                        } else {
-                            $set('interest_rate_year', 0);
-                            $set('package_min_amount', 0);
-                            $set('package_max_amount', 0);
-                        }
-                    })
-                    ->afterStateHydrated(function ($state, callable $set) {
-                        if ($state) {
-                            $package = LoanPackage::find($state);
-                            if ($package) {
-                                $config = $package->config_loans;
-                                if (!is_array($config)) {
-                                    $config = json_decode($config ?? '{}', true) ?: [];
-                                }
-                                // Không tự động set term_months, để admin chọn từ dropdown
-                                $set('interest_rate_year', $config['interest_rate'] ?? 0);
-                                $set('package_min_amount', $config['min_amount'] ?? 0);
-                                $set('package_max_amount', $config['max_amount'] ?? 0);
-                            }
-                        }
-                    }),
+                    ->placeholder('Nhập số tài khoản'),
+
+                TextInput::make('account_name')
+                    ->label('Tên chủ tài khoản')
+                    ->required()
+                    ->placeholder('Nhập tên chủ tài khoản'),
+
+                TextInput::make('loan_package_id')
+                    ->label('Gói vay')
+                    ->default(1)
+                    ->hidden()
+                    ->dehydrated(true),
 
                 TextInput::make('principal_amount')
                     ->label('Số tiền gốc (VND)')
                     ->numeric()
                     ->required()
-                    ->suffix('VND')
-                    ->live(debounce: 1000)
-                    ->rules([
-                        function (callable $get) {
-                            return function (string $attribute, $value, \Closure $fail) use ($get) {
-                                $packageMinAmount = $get('package_min_amount') ?? 0;
-                                $packageMaxAmount = $get('package_max_amount') ?? 0;
-                                $amount = (float) $value;
-                                
-                                if ($packageMinAmount > 0 && $amount < $packageMinAmount) {
-                                    $fail("Số tiền vay phải tối thiểu " . number_format($packageMinAmount) . " VNĐ theo hạn mức gói vay.");
-                                }
-                                
-                                if ($packageMaxAmount > 0 && $amount > $packageMaxAmount) {
-                                    $fail("Số tiền vay không được vượt quá " . number_format($packageMaxAmount) . " VNĐ theo hạn mức gói vay.");
-                                }
-                            };
-                        }
-                    ])
-                    ->helperText(function (callable $get) {
-                        $packageMinAmount = $get('package_min_amount') ?? 0;
-                        $packageMaxAmount = $get('package_max_amount') ?? 0;
-                        
-                        if ($packageMinAmount > 0 || $packageMaxAmount > 0) {
-                            $minText = $packageMinAmount > 0 ? number_format($packageMinAmount) . ' VNĐ' : 'không giới hạn';
-                            $maxText = $packageMaxAmount > 0 ? number_format($packageMaxAmount) . ' VNĐ' : 'không giới hạn';
-                            return "Hạn mức gói vay: Tối thiểu {$minText}, Tối đa {$maxText}";
-                        }
-                        
-                        return null;
-                    })
-                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                        if ($state && $get('interest_rate_year') && $get('term_months')) {
-                            $service = app(\App\Services\LoanCalculationService::class);
-                            $totalDueAmount = $service->calcAmount($state, $get('interest_rate_year'), $get('term_months'), $get('service_fee_amount') ?? 0);
-                            $set('total_due_amount', $totalDueAmount);
-                        }
-                    }),
+                    ->minValue(0)
+                    ->suffix('VND'),
 
-                Select::make('term_months')
+                TextInput::make('term_months')
                     ->label('Kỳ hạn (tháng)')
-                    ->options(function (callable $get) {
-                        $packageId = $get('loan_package_id');
-                        if (!$packageId) {
-                            return [];
-                        }
-                        
-                        $package = LoanPackage::find($packageId);
-                        if (!$package) {
-                            return [];
-                        }
-                        
-                        $config = $package->config_loans;
-                        if (!is_array($config)) {
-                            $config = json_decode($config ?? '{}', true) ?: [];
-                        }
-                        
-                        $termMonths = $config['term_month'] ?? [];
-                        if (!is_array($termMonths)) {
-                            $termMonths = [$termMonths];
-                        }
-                        
-                        $options = [];
-                        foreach ($termMonths as $month) {
-                            $options[$month] = $month . ' tháng';
-                        }
-                        
-                        return $options;
-                    })
-                    ->required()
-                    ->reactive()
-                    ->live(debounce: 1000)
-                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                        $termMonths = (int) $state;
-                        
-                        if ($termMonths && $get('principal_amount') && $get('interest_rate_year')) {
-                            $service = app(LoanCalculationService::class);
-                            $totalDueAmount = $service->calcAmount($get('principal_amount'), $get('interest_rate_year'), $termMonths, $get('service_fee_amount') ?? 0);
-                            $set('total_due_amount', $totalDueAmount);
-                        }
-                        
-                        if ($termMonths && $get('start_date')) {
-                            $startDate = Carbon::parse($get('start_date'));
-                            $dueDate = $startDate->copy()->addMonths($termMonths);
-                            $set('due_date', $dueDate);
-                        }
-                    }),
+                    ->placeholder('Nhập kỳ hạn vay')
+                    ->required(),
 
                 TextInput::make('interest_rate_year')
-                    ->label('Lãi suất năm (%)')
+                    ->label('Phí quá hạn')
                     ->numeric()
                     ->required()
-                    ->disabled()
-                    ->suffix('%')
-                    ->dehydrated(true),
+                    ->minValue(0)
+                    ->default(0),
 
-                TextInput::make('package_min_amount')
-                    ->label('Hạn mức tối thiểu gói vay')
-                    ->numeric()
-                    ->disabled()
-                    ->dehydrated(false)
-                    ->hidden(),
-
-                TextInput::make('package_max_amount')
-                    ->label('Hạn mức tối đa gói vay')
-                    ->numeric()
-                    ->disabled()
-                    ->dehydrated(false)
-                    ->hidden(),
 
                 TextInput::make('service_fee_amount')
                     ->label('Phí dịch vụ (VND)')
                     ->numeric()
                     ->default(0)
                     ->minValue(0)
-                    ->suffix('VND')
-                    ->live(debounce: 1000)
-                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                        if ($state && $get('principal_amount') && $get('interest_rate_year') && $get('term_months')) {
-                            $service = app(\App\Services\LoanCalculationService::class);
-                            $totalDueAmount = $service->calcAmount($get('principal_amount'), $get('interest_rate_year'), $get('term_months'), $state);
-                            $set('total_due_amount', $totalDueAmount);
-                        }
-                    }),
+                    ->suffix('VND'),
 
                 TextInput::make('total_due_amount')
                     ->label('Tổng số tiền phải trả (VND)')
                     ->numeric()
-                    ->disabled()
-                    ->dehydrated(false)
+                    ->required()
+                    ->minValue(0)
                     ->suffix('VND'),
 
                 TextInput::make('disbursed_amount')
@@ -278,23 +221,37 @@ class UserLoansForm
                 DatePicker::make('start_date')
                     ->label('Ngày bắt đầu vay')
                     ->default(now())
-                    ->live(debounce: 1000)
-                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                        if ($state && $get('term_months')) {
-                            $termMonths = (int) $get('term_months');
-                            $startDate = $state instanceof Carbon ? $state->copy() : Carbon::parse($state);
-                            $dueDate = $startDate->addMonths($termMonths);
-                            $set('due_date', $dueDate);
-                        }
-                    }),
+                    ->required(),
 
                 DatePicker::make('due_date')
                     ->label('Ngày đến hạn')
-                    ->disabled()
-                    ->dehydrated(false),
+                    ->required(),
 
+
+
+                FileUpload::make('front_image_card')
+                    ->label('Ảnh CCCD mặt trước')
+                    ->image()
+                    ->directory('user-documents')
+                    ->visibility('private')
+                    ->nullable(),
+
+                FileUpload::make('back_image_card')
+                    ->label('Ảnh CCCD mặt sau')
+                    ->image()
+                    ->directory('user-documents')
+                    ->visibility('private')
+                    ->nullable(),
+
+                FileUpload::make('id_card_selfie_path')
+                    ->label('Ảnh chụp chính chủ')
+                    ->image()
+                    ->directory('user-documents')
+                    ->visibility('private')
+                    ->nullable(),
                 Select::make('status')
                     ->label('Trạng thái')
+                    ->columnSpanFull()
                     ->options([
                         LoanStatus::PENDING->value => LoanStatus::PENDING->name(),
                         LoanStatus::APPROVED->value => LoanStatus::APPROVED->name(),
@@ -308,10 +265,8 @@ class UserLoansForm
                 Textarea::make('reject_reason')
                     ->label('Lý do từ chối')
                     ->rows(3)
-                    ->visible(fn (callable $get) => $get('status') == LoanStatus::REJECTED->value),
+                    ->visible(fn(callable $get) => $get('status') == LoanStatus::REJECTED->value),
             ])
             ->columns(2);
     }
-
-
 }

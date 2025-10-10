@@ -4,6 +4,7 @@ namespace App\Filament\Resources\UserLoans\Pages;
 
 use App\Filament\Resources\UserLoans\UserLoansResource;
 use App\Models\Payment;
+use App\Models\UserBankAccount;
 use App\Services\LoanCalculationService;
 use App\Services\PaymentService;
 use App\Services\UserLoanLogService;
@@ -53,13 +54,21 @@ class EditUserLoans extends EditRecord
     {
         $data = $this->fillAllRelatedInfo($data);
 
+        if (!empty($data['user_id'])) {
+            $bankAccount = UserBankAccount::where('user_id', $data['user_id'])->first();
+            if ($bankAccount) {
+                $data['bank_id'] = $bankAccount->bank_id;
+                $data['account_number'] = $bankAccount->account_number;
+                $data['account_name'] = $bankAccount->account_name;
+            }
+        }
+
         return $data;
     }
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $data = $this->fillAllRelatedInfo($data);
-        $data = $this->loanCalculationService->calculateLoanData($data);
 
         return $data;
     }
