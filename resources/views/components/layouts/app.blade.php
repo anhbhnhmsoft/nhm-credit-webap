@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title')</title>
     @vite(['resources/css/app.css'])
+    @vite(['resources/js/app.js'])
     @livewireStyles
 </head>
 
@@ -16,7 +17,9 @@
                 {{ $slot }}
             </div>
             <div class="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-[450px] z-50">
-                <x-layouts.footer />
+                @if (request()->route()->getName() !== 'register' && request()->route()->getName() !== 'login')
+                    <x-layouts.footer />
+                @endif
             </div>
         </div>
     </div>

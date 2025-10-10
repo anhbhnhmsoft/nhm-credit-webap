@@ -8,6 +8,7 @@ enum LoanLogStatus: int
     case PAID = 2; // đã thanh toán
     case PARTIAL = 3; // thanh toán một phần
     case OVERDUE = 4; // quá hạn
+    case WAIT_VERIFIED = 5; // chờ xác minh
 
     public function name(): string
     {
@@ -16,6 +17,7 @@ enum LoanLogStatus: int
             self::PAID => 'Đã thanh toán',
             self::PARTIAL => 'Thanh toán một phần',
             self::OVERDUE => 'Quá hạn',
+            self::WAIT_VERIFIED => 'Chờ xác minh',
         };
     }
 }

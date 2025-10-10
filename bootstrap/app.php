@@ -18,6 +18,6 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withSchedule(function (Schedule $schedule): void {
-        $schedule->command('app:check-time-user-loan-log')->daily();
+        $schedule->command('app:check-time-user-loan-log')->minute(5);
     })
     ->create();

@@ -15,7 +15,7 @@
                 @endphp
                 <span class="text-sm text-white">{{ $masked }}</span>
             @else
-                <a href="" class="px-4 py-2 bg-white text-[#800080] rounded text-sm font-medium">Đăng nhập</a>
+                <a href="{{ route('login') }}" class="px-4 py-2 bg-white text-[#800080] rounded text-sm font-medium">Đăng nhập</a>
             @endauth
         </div>
         

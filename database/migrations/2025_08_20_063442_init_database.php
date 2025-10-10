@@ -181,14 +181,6 @@ return new class extends Migration
             $table->softDeletes();
             $table->timestamps();
         });
-
-		Schema::create('user_otps', function (Blueprint $table) {
-			$table->id();
-			$table->foreignId('user_id')->constrained();
-			$table->string('otp');
-			$table->timestamp('expires_at');
-			$table->timestamps();
-		});
     }
     /**
      * Reverse the migrations.
@@ -209,6 +201,5 @@ return new class extends Migration
 		Schema::dropIfExists('users');
 		Schema::dropIfExists('sessions');
 		Schema::dropIfExists('page_statics');
-		Schema::dropIfExists('user_otps');
 	}
 };
