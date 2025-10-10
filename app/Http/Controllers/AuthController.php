@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
@@ -23,83 +23,69 @@ class AuthController extends Controller
         $this->authService = $authService;
     }
 
-    public function login(Request $request): JsonResponse
+    public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email',
-            'password' => ['required', 'string', 'min:8', 'regex:/[a-z]/', 'regex:/[A-Z]/'],
+            'phone' => 'required|digits:10',
+            'otp' => 'required|digits:6',
         ], [
-            'email.required' => __('auth.validation.email_required'),
-            'email.email' => __('auth.validation.email_email'),
-            'password.required' => __('auth.validation.password_required'),
-            'password.min' => __('auth.validation.password_min'),
-            'password.regex' => __('auth.validation.password_regex'),
+            'phone.required' => __('auth.validation.phone_required'),
+            'phone.digits' => __('auth.validation.phone_digits'),
+            'otp.required' => __('auth.validation.otp_required'),
+            'otp.digits' => __('auth.validation.otp_digits'),
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'message' => __('auth.error.validation_failed'),
-                'errors' => $validator->errors(),
-            ], 422);
+            return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        $result = $this->authService->login($validator->getData());
+        $result = $this->authService->login($validator->validated());
 
         if ($result['status'] === false) {
-            return response()->json([
-                'message' => $result['message'],
-            ], 422);
+            return redirect()->back()->with('error', $result['message']);
         }
+
         $user = $result['user'];
         $token = $result['token'];
 
-        return response()->json([
-            'token' => $token,
-            'user' => new UserResource($user),
-        ], 200);
+        session()->put('user', $user);
+        session()->put('token', $token);
+
+        return redirect()->route('home')->with('success', __('auth.success.login_success'));
+    }
+
+
+    public function loginForm()
+    {
+        return view('livewire.frontend.auth.login');
     }
 
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'min:4', 'max:255'],
-            'email' => ['required', 'email', Rule::unique('users','email')->where(function($query) use ($request) {
-            })],
+            'phone' => ['required', 'digits:10', Rule::unique('users', 'phone')],
             'password' => ['required', 'string', 'min:8', 'regex:/[a-z]/', 'regex:/[A-Z]/'],
             'confirm_password' => ['required', 'same:password'],
         ], [
-            'name.required' => __('auth.validation.name_required'),
-            'name.min' => __('auth.validation.name_min'),
-            'name.max' => __('auth.validation.name_max'),
-            'email.required' => __('auth.validation.email_required'),
-            'email.email' => __('auth.validation.email_email'),
-            'password.required' => __('auth.validation.password_required'),
-            'password.min' => __('auth.validation.password_min'),
-            'password.regex' => __('auth.validation.password_regex'),
-            'confirm_password.required' => __('auth.validation.confirm_password_required'),
-            'confirm_password.same' => __('auth.validation.confirm_password_same'),
-            'email.unique' => __('auth.validation.email_unique'),
+            'phone.required' => __('auth.validation.phone_required'),
+            'phone.digits' => __('auth.validation.phone_digits'),
+            'phone.unique' => __('auth.validation.phone_unique'),
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'message' => __('auth.error.validation_failed'),
-                'errors' => $validator->errors(),
-            ], 422);
+            return redirect()->back()->withErrors($validator)->withInput();
         }
 
         $result = $this->authService->register($validator->validated());
 
         if ($result['status'] === false) {
-            return response()->json([
-                'message' => $result['message'],
-            ], 500);
+            return redirect()->back()->with('error', $result['message']);
         }
 
-        return response()->json([
-            'message' => __('auth.success.register_success'),
-        ], 200);
+        return redirect()->route('login')->with('success', __('auth.success.register_success'));
     }
+
 
     public function verifyEmail(Request $request)
     {
@@ -107,7 +93,7 @@ class AuthController extends Controller
         if (! $user) {
             return response()->json([
                 'message' => __('auth.error.email_not_found'),
-            ],422);
+            ], 422);
         }
 
         if (! hash_equals((string) $request->route('hash'), sha1($user->getEmailForVerification()))) {
@@ -176,35 +162,25 @@ class AuthController extends Controller
     public function forgotPassword(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => ['required', 'email', 'exists:users,email'],
+            'phone' => ['required', 'digits:10'],
         ], [
-            'email.required' => __('auth.validation.email_required'),
-            'email.email' => __('auth.validation.email_email'),
-            'email.exists' => __('auth.validation.email_error'),
+            'phone.required' => __('auth.validation.phone_required'),
+            'phone.digits' => __('auth.validation.phone_digits'),
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'message' => __('auth.error.validation_failed'),
-                'errors' => $validator->errors(),
-            ], 422);
+            return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        $validated = $validator->validated();
+        $result = $this->authService->forgotPassword($validator->validated());
 
-        $result = $this->authService->forgotPassword($validated);
-
-        if (isset($result['status']) && $result['status'] === false) {
-            return response()->json([
-                'message' => $result['message'],
-            ], 422);
+        if ($result['status'] === false) {
+            return redirect()->back()->with('error', $result['message']);
         }
 
-        return response()->json([
-            'message' => __('auth.success.reset_sent'),
-            'data' => ['status' => true],
-        ], 200);
+        return redirect()->route('password.reset')->with('success', __('auth.success.reset_sent'));
     }
+
 
     public function confirmPassword(Request $request)
     {
@@ -263,10 +239,9 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $request->user()->tokens()->delete();
-        
-        return response()->json([
-            'message' => __('auth.success.logout_success'),
-        ], 200);
+        $request->session()->forget('user');
+        $request->session()->forget('token');
+
+        return redirect()->route('login')->with('success', __('auth.success.logout_success'));
     }
 }

@@ -2,10 +2,13 @@
 
 namespace App\Livewire\Frontend;
 
+use App\Exceptions\ServiceException;
 use App\Services\AuthService;
-use App\Models\Bank;
+use App\Services\BankAccountService;
+use App\Services\BankService;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Illuminate\Support\Facades\Auth;
 
 class MyBankPage extends Component
 {
@@ -17,12 +20,13 @@ class MyBankPage extends Component
     
     public $bank_id = '';
     public $account_number = '';
-    public $account_holder_name = '';
-
+    public $account_name = '';
+    public $message = '';
+    
     protected $rules = [
         'bank_id' => 'required|exists:banks,id',
         'account_number' => 'required|string|max:20',
-        'account_holder_name' => 'required|string|max:255',
+        'account_name' => 'required|string|max:255',
     ];
 
     protected $messages = [
@@ -30,21 +34,43 @@ class MyBankPage extends Component
         'bank_id.exists' => 'Ngân hàng không hợp lệ',
         'account_number.required' => 'Vui lòng nhập số tài khoản',
         'account_number.max' => 'Số tài khoản không được quá 20 ký tự',
-        'account_holder_name.required' => 'Vui lòng nhập tên chủ tài khoản',
-        'account_holder_name.max' => 'Tên chủ tài khoản không được quá 255 ký tự',
+        'account_name.required' => 'Vui lòng nhập tên chủ tài khoản',
+        'account_name.max' => 'Tên chủ tài khoản không được quá 255 ký tự',
     ];
+
+    protected AuthService $authService;
+    protected BankAccountService $bankAccountService;
+    protected BankService $bankService;
+
+    public function boot(AuthService $authService, BankService $bankService, BankAccountService $bankAccountService): void
+    {
+        $this->authService = $authService;
+        $this->bankService = $bankService;
+        $this->bankAccountService = $bankAccountService;
+    }
 
     public function mount()
     {
-        $this->banks = Bank::orderBy('name')->get()->toArray();
+        $this->banks = $this->bankService->list()->toArray();
     }
 
     public function render()
     {
-        $bankAccounts = app(AuthService::class)->getUserBankAccounts(auth()->id());
-        
+        if (!Auth::check()) {
+            $this->message = 'Bạn cần đăng nhập để xem và quản lý tài khoản ngân hàng.';
+            return view('livewire.frontend.my-bank-page', [
+                'bankAccount' => null,
+                'message' => $this->message,
+            ]);
+        }
+
+        $accounts = $this->bankAccountService->getUserBankAccounts(Auth::id()); // array
+        $bankAccount = $accounts[0] ?? null;
+
+        $this->message = '';
         return view('livewire.frontend.my-bank-page', [
-            'bankAccounts' => $bankAccounts
+            'bankAccount' => $bankAccount,
+            'message' => $this->message,
         ]);
     }
 
@@ -63,7 +89,7 @@ class MyBankPage extends Component
             $this->editingAccount = $accountId;
             $this->bank_id = $account['bank_id'];
             $this->account_number = $account['account_number'];
-            $this->account_holder_name = $account['account_holder_name'];
+            $this->account_name = $account['account_name'];
             $this->showForm = true;
         }
     }
@@ -71,30 +97,30 @@ class MyBankPage extends Component
     public function save()
     {
         $this->validate();
-
+        $this->showForm = false;
         try {
             if ($this->editingAccount) {
-                app(AuthService::class)->updateBankAccount(
+                $this->bankAccountService->updateBankAccount(
                     $this->editingAccount,
-                    auth()->id(),
+                    Auth::id(),
                     $this->bank_id,
                     $this->account_number,
-                    $this->account_holder_name
+                    $this->account_name
                 );
                 session()->flash('success', 'Cập nhật tài khoản ngân hàng thành công');
             } else {
-                app(AuthService::class)->createBankAccount(
-                    auth()->id(),
+                $this->bankAccountService->createBankAccount(
+                    Auth::id(),
                     $this->bank_id,
                     $this->account_number,
-                    $this->account_holder_name
+                    $this->account_name
                 );
                 session()->flash('success', 'Thêm tài khoản ngân hàng thành công');
             }
 
             $this->resetForm();
             $this->showForm = false;
-        } catch (\App\Exceptions\ServiceException $e) {
+        } catch (ServiceException $e) {
             session()->flash('error', $e->getMessage());
         }
     }
@@ -102,19 +128,9 @@ class MyBankPage extends Component
     public function delete($accountId)
     {
         try {
-            app(AuthService::class)->deleteBankAccount($accountId, auth()->id());
+            $this->bankAccountService->deleteBankAccount($accountId, Auth::id());
             session()->flash('success', 'Xóa tài khoản ngân hàng thành công');
-        } catch (\App\Exceptions\ServiceException $e) {
-            session()->flash('error', $e->getMessage());
-        }
-    }
-
-    public function setPrimary($accountId)
-    {
-        try {
-            app(AuthService::class)->setPrimaryAccount($accountId, auth()->id());
-            session()->flash('success', 'Đặt tài khoản chính thành công');
-        } catch (\App\Exceptions\ServiceException $e) {
+        } catch (ServiceException $e) {
             session()->flash('error', $e->getMessage());
         }
     }
@@ -130,7 +146,7 @@ class MyBankPage extends Component
         $this->editingAccount = null;
         $this->bank_id = '';
         $this->account_number = '';
-        $this->account_holder_name = '';
+        $this->account_name = '';
         $this->resetErrorBag();
     }
 }

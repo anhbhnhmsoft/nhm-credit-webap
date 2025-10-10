@@ -35,6 +35,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
         'number_card',
         'front_image_card',
         'back_image_card',
+        'id_card_selfie_path',
         'introduce',
         'role',
         'avatar_path',

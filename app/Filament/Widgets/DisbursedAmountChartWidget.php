@@ -22,10 +22,13 @@ class DisbursedAmountChartWidget extends ChartWidget
         $startDate = $this->pageFilters['startDate'] ?? Carbon::now()->subMonths(11)->startOfMonth();
         $endDate = $this->pageFilters['endDate'] ?? Carbon::now()->endOfMonth();
         
-        $disbursedData = $this->reportService->getDisbursedAmountReport($startDate, $endDate, 'monthly');
-        $totalDisbursed = number_format($disbursedData['total_disbursed']);
-        
-        return "Số tiền đã giải ngân theo tháng ({$totalDisbursed} VND)";
+        try {
+            $disbursedData = $this->reportService->getDisbursedAmountReport($startDate, $endDate, 'monthly');
+            $totalDisbursed = number_format($disbursedData['total_disbursed']);
+            return "Số tiền đã giải ngân theo tháng ({$totalDisbursed} VND)";
+        } catch (\Exception $e) {
+            return "Số tiền đã giải ngân theo tháng (Không có dữ liệu)";
+        }
     }
 
     protected static ?int $sort = 2;
@@ -37,7 +40,23 @@ class DisbursedAmountChartWidget extends ChartWidget
         $startDate = $this->pageFilters['startDate'] ?? Carbon::now()->subMonths(11)->startOfMonth();
         $endDate = $this->pageFilters['endDate'] ?? Carbon::now()->endOfMonth();
 
-        $disbursedData = $this->reportService->getDisbursedAmountReport($startDate, $endDate, 'monthly');
+        try {
+            $disbursedData = $this->reportService->getDisbursedAmountReport($startDate, $endDate, 'monthly');
+        } catch (\Exception $e) {
+            return [
+                'datasets' => [
+                    [
+                        'label' => 'Số tiền giải ngân (VND)',
+                        'data' => [],
+                        'borderColor' => 'rgb(59, 130, 246)',
+                        'backgroundColor' => 'rgba(59, 130, 246, 0.1)',
+                        'fill' => true,
+                        'tension' => 0.4,
+                    ],
+                ],
+                'labels' => [],
+            ];
+        }
 
         $labels = [];
         $data = [];

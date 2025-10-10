@@ -27,6 +27,9 @@ return new class extends Migration
             $table->string('phone')->nullable()->comment('Số điện thoại');
             $table->string('address')->nullable()->comment('Địa chỉ');
             $table->text('introduce')->nullable()->comment('Giới thiệu bản thân');
+			$table->text('front_image_card')->nullable()->comment('Đường dẫn ảnh mặt trước CMND/CCCD');
+            $table->text('back_image_card')->nullable()->comment('Đường dẫn ảnh mặt sau CMND/CCCD');
+            $table->text('id_card_selfie_path')->nullable()->comment('Đường dẫn ảnh selfie CMND/CCCD');
             $table->tinyInteger('role')->comment('Vai trò người dùng, lưu trong enum RoleUser');
             $table->string('avatar_path')->nullable()->comment('Đường dẫn ảnh đại diện');
             $table->timestamp('email_verified_at')->nullable()->comment('Thời gian xác thực email');
@@ -169,14 +172,23 @@ return new class extends Migration
 
 		Schema::create('page_statics', function (Blueprint $table) {
             $table->id();
+            $table->text('icon_svg')->nullable()->comment('Icon SVG lấy từ Heroicons');
             $table->string('title');
             $table->text('content');
-			$table->integer('type')->default(1)->comment('Loại trang tĩnh, lưu trong enum PageStaticType');
+            $table->integer('type')->default(1)->comment('Loại trang tĩnh, lưu trong enum PageStaticType');
             $table->string('slug');
             $table->tinyInteger('status')->comment('Trạng thái, lưu trong enum CommonStatus');
             $table->softDeletes();
             $table->timestamps();
         });
+
+		Schema::create('user_otps', function (Blueprint $table) {
+			$table->id();
+			$table->foreignId('user_id')->constrained();
+			$table->string('otp');
+			$table->timestamp('expires_at');
+			$table->timestamps();
+		});
     }
     /**
      * Reverse the migrations.
@@ -197,5 +209,6 @@ return new class extends Migration
 		Schema::dropIfExists('users');
 		Schema::dropIfExists('sessions');
 		Schema::dropIfExists('page_statics');
+		Schema::dropIfExists('user_otps');
 	}
 };
