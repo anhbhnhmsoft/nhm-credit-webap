@@ -241,6 +241,11 @@ class AuthController extends Controller
     {
         $request->session()->forget('user');
         $request->session()->forget('token');
+        
+        auth()->logout();
+        
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
         return redirect()->route('login')->with('success', __('auth.success.logout_success'));
     }

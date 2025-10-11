@@ -42,7 +42,6 @@ class EditUser extends EditRecord
 
     protected function afterFill(): void
     {
-        // Nếu vừa tạo xong và chưa có tài khoản ngân hàng thì hiển thị banner nhắc
         if (session()->pull('prompt_add_bank_account', false)) {
             Notification::make()
                 ->title('Người dùng vừa được tạo')

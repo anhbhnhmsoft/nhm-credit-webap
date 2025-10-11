@@ -27,7 +27,9 @@
                         <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded">Đăng xuất</button>
                     </form>
                 @else
-                    <a href="{{ route('login') }}" class="px-4 py-2 bg-blue-600 text-white rounded inline-block mx-auto">Đăng nhập</a>
+                <div class="flex justify-center">
+                    <a href="{{ route('login') }}" class="px-4 py-2 bg-[#fef4bf] text-black font-semibold rounded inline-block mx-auto">Đăng nhập</a>
+                </div>
                 @endauth
             </div>
         </div>

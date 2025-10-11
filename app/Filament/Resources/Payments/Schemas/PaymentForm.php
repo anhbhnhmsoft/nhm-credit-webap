@@ -100,7 +100,6 @@ class PaymentForm
                     ->reactive()
                     ->visible(fn (callable $get) => (bool) $get('user_id'))
                     ->afterStateUpdated(function ($state, callable $set) {
-                        // Reset kỳ trả khi đổi khoản vay
                         $set('user_loan_log_id', null);
                     }),
 

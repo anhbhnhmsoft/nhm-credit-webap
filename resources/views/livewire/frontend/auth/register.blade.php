@@ -1,6 +1,6 @@
 @section('title', 'Đăng ký tài khoản')
 
-<div class="max-w-md mx-auto mt-10 bg-white shadow rounded p-6">
+<div class="max-w-md mx-auto mt-10 bg-white shadow-lg border border-gray-100 rounded p-6">
     <div class="w-full flex justify-start items-center">
         <a href="javascript:history.back()" class="flex items-center space-x-2">
         <span role="img" aria-label="arrow-left" tabindex="-1" class="anticon anticon-arrow-left h-6 w-6">
@@ -52,7 +52,7 @@
         </div>
 
         <div class="mt-6">
-            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700">Đăng ký</button>
+            <button type="submit" class="w-full bg-[#fef4bf] text-black font-semibold py-2 px-4 rounded">Đăng ký</button>
         </div>
     </form>
 

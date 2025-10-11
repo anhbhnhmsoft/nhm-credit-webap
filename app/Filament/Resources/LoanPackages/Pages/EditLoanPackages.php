@@ -27,7 +27,6 @@ class EditLoanPackages extends EditRecord
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
-        // Hiển thị array thành text khi load form
         if (isset($data['config_loans']['term_month']) && is_array($data['config_loans']['term_month'])) {
             $data['config_loans']['term_month'] = implode(', ', $data['config_loans']['term_month']);
         }

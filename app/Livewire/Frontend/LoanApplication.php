@@ -2,7 +2,10 @@
 
 namespace App\Livewire\Frontend;
 
+use App\Utils\Constants\LoanLogStatus;
 use App\Services\UserLoanService;
+use App\Services\UserLoanLogService;
+use App\Utils\Constants\LoanStatus;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -25,10 +28,12 @@ class LoanApplication extends Component
     ];
 
     protected UserLoanService $userLoanService;
+    protected UserLoanLogService $userLoanLogService;
 
-    public function boot(UserLoanService $userLoanService): void
+    public function boot(UserLoanService $userLoanService, UserLoanLogService $userLoanLogService): void
     {
         $this->userLoanService = $userLoanService;
+        $this->userLoanLogService = $userLoanLogService;
     }
 
     public function changeTab(string $tab)
@@ -39,7 +44,7 @@ class LoanApplication extends Component
 
     public function mount()
     {
-        if (Auth::check()) {
+        if (Auth::check() || session('user')) {
             $this->loadLoansByTab();
             $this->message = '';
         } else {
@@ -50,38 +55,52 @@ class LoanApplication extends Component
 
     private function loadLoansByTab()
     {
-        if (!Auth::check()) {
+        $userId = $this->getUserId();
+        if (!$userId) {
             $this->loans = collect([]);
             $this->loanLogs = collect([]);
             return;
         }
 
-        $allLoans = $this->userLoanService->getUserLoans(Auth::id());
+        $allLoans = $this->userLoanService->getUserLoans($userId);
         
         switch ($this->tab) {
             case 'pending':
-                $this->loanLogs = $this->userLoanService->getUserLoanLogsDue(Auth::id());
+                $this->loanLogs = $this->userLoanLogService->getUserLoanLogsDue($userId);
                 $this->loans = collect([]);
                 break;
                 
             case 'approved':
                 $this->loans = $allLoans->filter(function ($loan) {
-                    return in_array($loan->status, [1, 2]); // PENDING, APPROVED
+                    return in_array($loan->status, [LoanStatus::PENDING->value, LoanStatus::APPROVED->value]);
                 });
                 $this->loanLogs = collect([]);
                 break;
                 
             case 'paid':
-                $this->loans = $allLoans->filter(function ($loan) {
-                    return $loan->status == 5; // COMPLETED
-                });
-                $this->loanLogs = collect([]);
+                $this->loanLogs = $this->userLoanLogService->getUserLoanLogsPaid($userId);
+                $this->loans = collect([]);
                 break;
                 
             default:
                 $this->loans = $allLoans;
                 $this->loanLogs = collect([]);
         }
+    }
+
+    private function getUserId()
+    {
+        if (Auth::check()) {
+            return Auth::id();
+        }
+        
+        $sessionUser = session('user');
+        return $sessionUser ? $sessionUser->id : null;
+    }
+
+    public function viewLoanDetail($loanId)
+    {
+        return redirect()->route('loan-detail', ['id' => $loanId]);
     }
 
     public function render()

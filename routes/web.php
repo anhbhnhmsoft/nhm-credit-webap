@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Route;
 use App\Livewire\Frontend\PageStaticPage;
 use App\Http\Controllers\FileController;
 use App\Livewire\Frontend\LoanApplication;
+use App\Livewire\Frontend\LoanDetail;
+use App\Livewire\Frontend\PaymentPage;
 use App\Livewire\Frontend\RegisterPage;
 use App\Livewire\Frontend\RegisterPhone;
 use App\Livewire\Frontend\RegisterInfo;
@@ -21,6 +23,8 @@ Route::prefix('profile')->group(function () {
     Route::get('/', ProfilePage::class)->name('profile');
     Route::get('/my-bank', MyBankPage::class)->name('my-bank');
     Route::get('/loan-application', LoanApplication::class)->name('loan-application');
+    Route::get('/loan-detail/{id}', LoanDetail::class)->name('loan-detail');
+    Route::get('/payment/{id}', PaymentPage::class)->name('payment');
     Route::get('/my-setting', MySettingPage::class)->name('my-setting');
 });
 

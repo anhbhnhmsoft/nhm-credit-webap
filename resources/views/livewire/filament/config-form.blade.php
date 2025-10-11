@@ -4,19 +4,19 @@
             <label for="config_{{ $config->config_key }}"
                    class="block text-sm font-bold text-gray-700">{{ $config->config_key }}</label>
 
-            @if($config->config_key === 'LOGO')
+            @if($config->config_key === 'LOGO' || $config->config_key === 'QR_IMAGE')
                 <x-filament::input.wrapper class="w-full">
                     <input type="file"
                            wire:model="config_value.{{$config->config_key}}"
                            class="fi-input fi-input-file w-full" accept="image/*" />
                 </x-filament::input.wrapper>
                 @php
-                    $newLogo = $config_value['LOGO'] ?? null;
+                    $newImage = $config_value[$config->config_key] ?? null;
                 @endphp
-                @if(is_object($newLogo) && method_exists($newLogo, 'temporaryUrl'))
-                    <img src="{{ $newLogo->temporaryUrl() }}" alt="Preview Logo" class="h-12 mt-2 rounded" />
+                @if(is_object($newImage) && method_exists($newImage, 'temporaryUrl'))
+                    <img src="{{ $newImage->temporaryUrl() }}" alt="Preview {{ $config->config_key }}" class="h-12 mt-2 rounded" />
                 @elseif(isset($config->config_value) && $config->config_value)
-                    <img src="{{ \App\Utils\Helper::generateURLImagePath($config->config_value) }}" alt="Current Logo" class="h-12 mt-2 rounded" />
+                    <img src="{{ \App\Utils\Helper::generateURLImagePath($config->config_value) }}" alt="Current {{ $config->config_key }}" class="h-12 mt-2 rounded" />
                 @endif
             @else
                 <x-filament::input.wrapper class="w-full">

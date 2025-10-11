@@ -44,10 +44,10 @@ class UserLoansForm
                                 $set('back_image_card', $user->back_image_card);
                                 $set('id_card_selfie_path', $user->id_card_selfie_path);
                                 
-                                // Lấy thông tin ngân hàng
                                 $bankAccount = \App\Models\UserBankAccount::where('user_id', $state)->first();
                                 if ($bankAccount) {
                                     $set('bank_id', $bankAccount->bank_id);
+                                    $set('bank_name', $bankAccount->bank_name);
                                     $set('account_number', $bankAccount->account_number);
                                     $set('account_name', $bankAccount->account_name);
                                 }
@@ -61,6 +61,7 @@ class UserLoansForm
                             $set('back_image_card', null);
                             $set('id_card_selfie_path', null);
                             $set('bank_id', null);
+                            $set('bank_name', null);
                             $set('account_number', null);
                             $set('account_name', null);
                         }
@@ -77,10 +78,10 @@ class UserLoansForm
                                 $set('back_image_card', $user->back_image_card);
                                 $set('id_card_selfie_path', $user->id_card_selfie_path);
                                 
-                                // Lấy thông tin ngân hàng
                                 $bankAccount = \App\Models\UserBankAccount::where('user_id', $state)->first();
                                 if ($bankAccount) {
                                     $set('bank_id', $bankAccount->bank_id);
+                                    $set('bank_name', $bankAccount->bank_name);
                                     $set('account_number', $bankAccount->account_number);
                                     $set('account_name', $bankAccount->account_name);
                                 }
@@ -140,21 +141,21 @@ class UserLoansForm
                         },
                     ]),
 
-                TextInput::make('user_address')
+                TextInput::make('user_number_card')
                     ->label('CCCD/CMND')
                     ->required()
                     ->placeholder('Nhập số CCCD/CMND')
                     ->live(debounce: 500),
 
-                Select::make('bank_id')
-                    ->label('Ngân hàng')
-                    ->required()
-                    ->options(fn() => Bank::query()
-                        ->orderBy('name')
-                        ->pluck('name', 'id'))
-                    ->searchable()
-                    ->preload()
-                    ->placeholder('Chọn ngân hàng'),
+                TextInput::make('bank_name')
+                    ->label('Tên ngân hàng')
+                    ->placeholder('Nhập tên ngân hàng hoặc chọn từ dropdown trên')
+                    ->live()
+                    ->afterStateUpdated(function ($state, callable $set) {
+                        if ($state) {
+                            $set('bank_id', null);
+                        }
+                    }),
 
                 TextInput::make('account_number')
                     ->label('Số tài khoản')
@@ -180,7 +181,7 @@ class UserLoansForm
                     ->suffix('VND'),
 
                 TextInput::make('term_months')
-                    ->label('Kỳ hạn (tháng)')
+                    ->label('Kỳ hạn')
                     ->placeholder('Nhập kỳ hạn vay')
                     ->required(),
 
@@ -206,6 +207,15 @@ class UserLoansForm
                     ->minValue(0)
                     ->suffix('VND'),
 
+                TextInput::make('total_paid_amount')
+                    ->label('Đã trả (VND)')
+                    ->numeric()
+                    ->default(0)
+                    ->minValue(0)
+                    ->suffix('VND')
+                    ->helperText('Số tiền đã thanh toán từ UserLoanLog sẽ được đồng bộ tự động')
+                    ->visible(fn() => request()->routeIs('filament.admin.resources.user-loans.edit')),
+
                 TextInput::make('disbursed_amount')
                     ->label('Số tiền đã giải ngân (VND)')
                     ->numeric()
@@ -225,9 +235,8 @@ class UserLoansForm
 
                 DatePicker::make('due_date')
                     ->label('Ngày đến hạn')
+                    ->columnSpanFull()
                     ->required(),
-
-
 
                 FileUpload::make('front_image_card')
                     ->label('Ảnh CCCD mặt trước')
@@ -247,6 +256,7 @@ class UserLoansForm
                     ->label('Ảnh chụp chính chủ')
                     ->image()
                     ->directory('user-documents')
+                    ->columnSpanFull()
                     ->visibility('private')
                     ->nullable(),
                 Select::make('status')
@@ -269,4 +279,5 @@ class UserLoansForm
             ])
             ->columns(2);
     }
+
 }

@@ -66,22 +66,25 @@ class LoanCalculationService
                 ? \Carbon\Carbon::parse($data['start_date']) 
                 : $data['start_date'];
             
-            $data['due_date'] = $startDate->copy()->addMonths((int) $data['term_months']);
+            $termDays = $this->parseTermToDays($data['term_months']);
+            $data['due_date'] = $startDate->copy()->addDays($termDays);
         }
         
         if (isset($data['principal_amount']) && 
             isset($data['interest_rate_year']) && 
             isset($data['term_months'])) {
             
-            $data['monthly_payment'] = $this->calcMonthlyPayment(
-                $data['principal_amount'],
-                null,
-                (int) $data['term_months'],
-                $data['interest_rate_year']
-            );
+            $data['total_due_amount'] = $data['principal_amount'] + $data['interest_rate_year'] + $data['service_fee_amount'];
         }
         
         return $data;
+    }
+
+
+    private function parseTermToDays(string $term): int
+    {
+        preg_match('/(\d+)/', $term, $matches);
+        return isset($matches[1]) ? (int) $matches[1] : 0;
     }
 
     public function updateLoanCalculations($loan, array $changes): void

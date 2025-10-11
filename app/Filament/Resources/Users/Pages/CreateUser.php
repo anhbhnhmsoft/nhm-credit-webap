@@ -52,7 +52,6 @@ class CreateUser extends CreateRecord
         
         $record = static::getModel()::create($data);
 
-        // Đánh dấu để hiện nhắc thêm tài khoản ngân hàng ở trang edit
         session()->flash('prompt_add_bank_account', true);
 
         return $record;
@@ -60,7 +59,6 @@ class CreateUser extends CreateRecord
 
     protected function getRedirectUrl(): string
     {
-        // Sau khi tạo xong -> chuyển sang trang sửa user để thêm tài khoản ngân hàng
         return $this->getResource()::getUrl('edit', ['record' => $this->record]);
     }
 }

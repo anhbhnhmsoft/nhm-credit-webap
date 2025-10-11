@@ -65,22 +65,15 @@ class InitApplication extends Command
         $this->info('--- Seeding demo database');
         DB::beginTransaction();
         
-        $r1 = $this->seedingBank();
+        $r1 = $this->seedingPageStatic();
         if (!$r1) {
-            DB::rollBack();
-            $this->error('Lỗi khi chạy Seeding demo database r1!');
-            return Command::FAILURE;
-        }
-
-        $r2 = $this->seedingPageStatic();
-        if (!$r2) {
             DB::rollBack();
             $this->error('Lỗi khi chạy Seeding demo database r2!');
             return Command::FAILURE;
         }
 
-        $r3 = $this->seedingConfig();
-        if (!$r3) {
+        $r2 = $this->seedingConfig();
+        if (!$r2) {
             DB::rollBack();
             $this->error('Lỗi khi chạy Seeding demo database r3!');
             return Command::FAILURE;
@@ -91,33 +84,6 @@ class InitApplication extends Command
         return Command::SUCCESS;
     }
 
-    private function seedingBank(): bool
-    {
-        try {
-            // Lấy danh sách ngân hàng từ VietQR
-            $this->info('Tải danh sách ngân hàng từ VietQR...');
-            $res = Http::timeout(20)->get('https://api.vietqr.io/v2/banks');
-            if ($res->ok()) {
-                $data = $res->json('data') ?? [];
-                foreach ($data as $item) {
-                    $code = $item['code'] ?? null;
-                    $name = $item['name'] ?? ($item['shortName'] ?? null);
-                    if (! $code || ! $name) {
-                        continue;
-                    }
-                    Bank::updateOrCreate(['code' => $code], ['name' => $name]);
-                }
-                $this->info('Seed ngân hàng: thành công');
-                return true;
-            } else {
-                $this->warn('Không thể tải danh sách ngân hàng từ VietQR. Bỏ qua.');
-                return true;
-            }
-        } catch (\Throwable $e) {
-            $this->warn('Seed ngân hàng lỗi: ' . $e->getMessage());
-            return false;
-        }
-    }
 
     private function seedingPageStatic(): bool
     {
@@ -159,16 +125,40 @@ class InitApplication extends Command
 
     private function seedingConfig(): bool
     {
-        $logoPath = StoragePath::makePath(StoragePath::CONFIG_PATH, 'logo.jpg');
-        Storage::disk('public')->put($logoPath, file_get_contents(public_path('images/logo.jpg')));
-
         try {
+            $logoPath = StoragePath::makePath(StoragePath::CONFIG_PATH, 'logo.jpg');
+            if (file_exists(public_path('images/logo.jpg'))) {
+                Storage::disk('public')->put($logoPath, file_get_contents(public_path('images/logo.jpg')));
+            } else {
+                $logoPath = 'images/logo.jpg';
+            }
+
+            $qrImagePath = StoragePath::makePath(StoragePath::CONFIG_PATH, 'qr-code.png');
+            if (file_exists(public_path('images/qr-code.png'))) {
+                Storage::disk('public')->put($qrImagePath, file_get_contents(public_path('images/qr-code.png')));
+            } else {
+                if (file_exists(public_path('images/logo.jpg'))) {
+                    $logoContent = file_get_contents(public_path('images/logo.jpg'));
+                    Storage::disk('public')->put($qrImagePath, $logoContent);
+                    $this->info('Đã tạo QR code mẫu từ logo (vui lòng thay thế bằng QR code thực tế)');
+                } else {
+                    $qrImagePath = 'images/qr-code.png';
+                    $this->warn('Không tìm thấy file QR code và logo. Sử dụng đường dẫn fallback.');
+                }
+            }
+
             Config::query()->insert([
                 [
                     'config_key' => ConfigName::LOGO->value,
                     'config_type' => ConfigType::IMAGE->value,
                     'config_value' => $logoPath,
                     'description' => 'Cấu hình logo website',
+                ],
+                [
+                    'config_key' => ConfigName::ADMIN_ACCOUNT_NAME_BANK->value,
+                    'config_type' => ConfigType::STRING->value,
+                    'config_value' => 'MB BANK ngân hàng quân đội Việt Nam',
+                    'description' => 'Chú thích: Tên tài khoản ngân hàng để thanh toán',
                 ],
                 [
                     'config_key' => ConfigName::ADMIN_ACCOUNT_BANK_NAME->value,
@@ -183,14 +173,15 @@ class InitApplication extends Command
                     'description' => 'Chú thích: Số tài khoản ngân hàng chính của hệ thống dùng để thanh toán',
                 ],
                 [
-                    'config_key' => ConfigName::ADMIN_ACCOUNT_BANK_BIN->value,
-                    'config_type' => ConfigType::STRING->value,
-                    'config_value' => '970422',
-                    'description' => 'Chú thích: Mã kiểm tra số tài khoản ngân hàng chính của hệ thống dùng để thanh toán',
+                    'config_key' => ConfigName::QR_IMAGE->value,
+                    'config_type' => ConfigType::IMAGE->value,
+                    'config_value' => $qrImagePath,
+                    'description' => 'Chú thích: Ảnh QR code cho thanh toán',
                 ]
             ]);
             return true;
         }catch (\Exception $exception){
+            $this->error('Lỗi seeding config: ' . $exception->getMessage());
             return false;
         }
     }

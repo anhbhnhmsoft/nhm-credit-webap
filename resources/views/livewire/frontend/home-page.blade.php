@@ -20,7 +20,7 @@
         }
 
         .range-primary-color {
-            --range-thumb: black;
+            --range-thumb: #645b5b;
             color: #fef4bf;
         }
     </style>
@@ -70,10 +70,9 @@
                                     class="absolute top-0 left-0 w-full h-[20px] flex items-center justify-center text-[13px] text-black font-medium">Số
                                     tiền vay</span>
                             </div>
-                            <span class="text-4xl primary-color text-center font-normal lato-light mt-8"
-                                id="loan-amount">
-                                @if ($activeLoanPackage)
-                                    {{ number_format($amount, 0, ',', '.') }}
+                            <span class="text-4xl primary-color text-center font-normal lato-light mt-8" id="loan-amount">
+                                @if($activeLoanPackage)
+                                {{ number_format($amount / 1000, 0, ',', '.') }}
                                 @else
                                     20.000.000
                                 @endif
@@ -96,10 +95,11 @@
                                         </div>
                                     @endforeach
                                 @else
-                                    <div class="text-base text-[var(--primary)]">2.000.000</div>
-                                    <div class="text-base text-[var(--primary)]">11.000.000.</div>
-                                    <div class="text-base text-[var(--primary)]">15.500.000</div>
-                                    <div class="text-base text-[var(--primary)]">20.000.000</div>
+                                    <div class="text-base text-[var(--primary)]">2000K</div>
+                                    <div class="text-base text-[var(--primary)]">5000K</div>
+                                    <div class="text-base text-[var(--primary)]">10000K</div>
+                                    <div class="text-base text-[var(--primary)]">15000K</div>
+                                    <div class="text-base text-[var(--primary)] font-semibold">20000K</div>
                                 @endif
                             </div>
                             <div class="w-full h-px bg-gray-200 my-4"></div>
@@ -148,7 +148,7 @@
 
 <script>
     function updateAmount(slider) {
-        var amount = parseInt(slider.value);
+        var amount = Math.round(parseInt(slider.value));
         var formattedAmount = amount.toLocaleString('vi-VN');
         document.getElementById('loan-amount').innerText = formattedAmount;
 
@@ -156,8 +156,12 @@
     }
 
     function getSliderAmount() {
-        return parseInt(document.getElementById('loan-slider').getAttribute('data-amount') || document.getElementById(
-            'loan-slider').value);
+        var slider = document.getElementById('loan-slider');
+        var dataAmount = slider.getAttribute('data-amount');
+        if (dataAmount) {
+            return parseInt(dataAmount);
+        }
+        return Math.round(parseInt(slider.value)) * 1000;
     }
 
     function selectTerm(months) {

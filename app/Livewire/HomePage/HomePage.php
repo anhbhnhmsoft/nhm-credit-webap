@@ -14,7 +14,7 @@ class HomePage extends Component
     public $amount = 2000000;
     public int $days = 180;
 
-    public array $quickAmounts = [2000000, 6500000, 11000000, 15500000, 20000000];
+    public array $quickAmounts = [2000000, 5000000, 10000000, 15000000, 20000000];
     
     public $activeLoanPackage = null;
     public $selectedTermMonths = 6;
@@ -48,12 +48,19 @@ class HomePage extends Component
         if ($this->activeLoanPackage) {
             $config = $this->activeLoanPackage->config_loans;
             $this->amount = data_get($config, 'min_amount', 2000000);
+            $minAmount = data_get($config, 'min_amount', 2000000);
+            $maxAmount = data_get($config, 'max_amount', 20000000);
+            $range = $maxAmount - $minAmount;
+            
+            $minK = $minAmount / 1000;
+            $maxK = $maxAmount / 1000;
+            
             $this->quickAmounts = [
-                data_get($config, 'min_amount', 2000000),
-                data_get($config, 'min_amount', 2000000) + (data_get($config, 'max_amount', 20000000) - data_get($config, 'min_amount', 2000000)) * 0.25,
-                data_get($config, 'min_amount', 2000000) + (data_get($config, 'max_amount', 20000000) - data_get($config, 'min_amount', 2000000)) * 0.5,
-                data_get($config, 'min_amount', 2000000) + (data_get($config, 'max_amount', 20000000) - data_get($config, 'min_amount', 2000000)) * 0.75,
-                data_get($config, 'max_amount', 20000000)
+                floor($minK / 1000) * 1000 * 1000,
+                floor(($minK + ($maxK - $minK) * 0.25) / 1000) * 1000 * 1000,
+                floor(($minK + ($maxK - $minK) * 0.5) / 1000) * 1000 * 1000,
+                floor(($minK + ($maxK - $minK) * 0.75) / 1000) * 1000 * 1000,
+                floor($maxK / 1000) * 1000 * 1000
             ];
             
             $termMonths = data_get($config, 'term_month', []);

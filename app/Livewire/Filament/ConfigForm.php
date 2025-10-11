@@ -35,9 +35,13 @@ class ConfigForm extends Component
 
     public function updateConfig()
     {
-        if (Arr::exists($this->config_value, 'LOGO') && $this->config_value['LOGO'] instanceof TemporaryUploadedFile) {
-            $storedPath = $this->config_value['LOGO']->store(StoragePath::CONFIG_PATH->value, 'public');
-            $this->config_value['LOGO'] = $storedPath;
+        $imageFields = ['LOGO', 'QR_IMAGE'];
+        
+        foreach ($imageFields as $field) {
+            if (Arr::exists($this->config_value, $field) && $this->config_value[$field] instanceof TemporaryUploadedFile) {
+                $storedPath = $this->config_value[$field]->store(StoragePath::CONFIG_PATH->value, 'public');
+                $this->config_value[$field] = $storedPath;
+            }
         }
 
         $result = $this->service->updateConfigs($this->config_value);

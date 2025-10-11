@@ -88,6 +88,7 @@ return new class extends Migration
 			$table->id();
 			$table->foreignId('user_id')->constrained()->cascadeOnDelete()->comment('ID người dùng');
 			$table->foreignId('bank_id')->nullable()->constrained('banks')->nullOnDelete()->comment('ID ngân hàng');
+			$table->string('bank_name')->nullable()->comment('Tên ngân hàng tự nhập');
 			$table->string('account_number')->comment('Số tài khoản');
 			$table->string('account_name')->comment('Tên chủ tài khoản');
 			$table->boolean('is_verified')->default(false)->comment('Đã xác thực');

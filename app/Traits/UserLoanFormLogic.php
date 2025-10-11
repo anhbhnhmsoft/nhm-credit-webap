@@ -4,6 +4,7 @@ namespace App\Traits;
 
 use App\Models\LoanPackage;
 use App\Models\User;
+use App\Models\UserLoanLog;
 
 trait UserLoanFormLogic
 {
@@ -15,6 +16,10 @@ trait UserLoanFormLogic
                 $data['user_name'] = $user->name;
                 $data['user_phone'] = $user->phone;
                 $data['user_email'] = $user->email;
+                $data['user_address'] = $user->address;
+                $data['front_image_card'] = $user->front_image_card;
+                $data['back_image_card'] = $user->back_image_card;
+                $data['id_card_selfie_path'] = $user->id_card_selfie_path;
             }
         }
 
@@ -41,6 +46,18 @@ trait UserLoanFormLogic
     {
         $data = $this->fillUserInfo($data);
         $data = $this->fillLoanPackageInfo($data);
+        $data = $this->fillPaidAmountInfo($data);
+
+        return $data;
+    }
+
+    protected function fillPaidAmountInfo(array $data): array
+    {
+        if (!isset($data['total_paid_amount']) && isset($data['id']) && !empty($data['id'])) {
+            $totalPaidFromLogs = UserLoanLog::where('user_loan_id', $data['id'])
+                ->sum('total_paid');
+            $data['total_paid_amount'] = $totalPaidFromLogs;
+        }
 
         return $data;
     }

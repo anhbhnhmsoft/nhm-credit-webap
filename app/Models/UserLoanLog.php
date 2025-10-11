@@ -27,6 +27,16 @@ class UserLoanLog extends Model
         'status',
     ];
 
+    protected $casts = [
+        'due_date' => 'date',
+        'actual_due_date' => 'date',
+        'principal_due' => 'decimal:2',
+        'interest_due' => 'decimal:2',
+        'fee_due' => 'decimal:2',
+        'total_due' => 'decimal:2',
+        'total_paid' => 'decimal:2',
+    ];
+
     protected static function booted()
     {
         static::creating(function ($model) {

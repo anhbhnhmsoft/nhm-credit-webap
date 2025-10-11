@@ -14,6 +14,10 @@ use App\Services\NotificationService;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\App;
 use App\Services\UserLoanService;
+use App\Models\UserLoan;
+use App\Models\UserLoanLog;
+use App\Observers\UserLoanObserver;
+use App\Observers\UserLoanLogObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -41,5 +45,8 @@ class AppServiceProvider extends ServiceProvider
         if (request()->is('admin*')) {
             App::setLocale('vi');
         }
+        
+        UserLoan::observe(UserLoanObserver::class);
+        UserLoanLog::observe(UserLoanLogObserver::class);
     }
 }
