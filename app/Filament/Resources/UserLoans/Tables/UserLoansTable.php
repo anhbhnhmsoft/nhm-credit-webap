@@ -2,8 +2,9 @@
 
 namespace App\Filament\Resources\UserLoans\Tables;
 
-use App\Services\PaymentService;
-use App\Services\UserLoanLogService;
+use App\Models\UserBankAccount;
+use App\Services\UserLoanApprovalService;
+use App\Utils\Helper;
 use App\Utils\Constants\LoanStatus;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -11,6 +12,7 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -23,6 +25,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
+use Illuminate\Support\HtmlString;
 
 class UserLoansTable
 {
@@ -140,75 +143,68 @@ class UserLoansTable
                                 })
                                 ->visible(fn ($get) => $get('mode') === 'approve_and_disburse')
                                 ->required(fn ($get) => $get('mode') === 'approve_and_disburse'),
+                            Placeholder::make('payment_qr')
+                                ->label('QR thanh toán')
+                                ->visible(fn ($get) => $get('mode') === 'approve_and_disburse')
+                                ->content(function ($record, $get) {
+                                    $bankAccount = UserBankAccount::query()
+                                        ->where('user_id', $record->user_id)
+                                        ->first();
+
+                                    if (!$bankAccount || empty($bankAccount->bank_name) || empty($bankAccount->account_number) || empty($bankAccount->account_name)) {
+                                        return new HtmlString('<p class="text-sm text-gray-500">Người dùng chưa có đủ thông tin tài khoản ngân hàng để tạo QR.</p>');
+                                    }
+
+                                    $amount = (int) ($get('disbursed_amount') ?: $record->principal_amount);
+                                    $bankCode = self::resolveBankQrCode($bankAccount->bank_name);
+                                    $description = 'GIAI NGAN ' . $record->id;
+                                    $accountName = mb_strtoupper($bankAccount->account_name);
+                                    $qrUrl = Helper::generateQRCodeBanking(
+                                        $bankCode,
+                                        $bankAccount->account_number,
+                                        $accountName,
+                                        $amount,
+                                        $description,
+                                        'compact2',
+                                    );
+
+                                    return new HtmlString(
+                                        '<div class="space-y-3 rounded-lg border border-gray-200 p-4">'
+                                        . '<img src="' . e($qrUrl) . '" alt="QR thanh toán" class="mx-auto h-56 w-56 object-contain" />'
+                                        . '<div class="space-y-1 text-sm">'
+                                        . '<p><strong>Ngân hàng:</strong> ' . e($bankAccount->bank_name) . '</p>'
+                                        . '<p><strong>Số tài khoản:</strong> ' . e($bankAccount->account_number) . '</p>'
+                                        . '<p><strong>Tên tài khoản:</strong> ' . e($bankAccount->account_name) . '</p>'
+                                        . '<p><strong>Số tiền:</strong> ' . number_format($amount) . ' VNĐ</p>'
+                                        . '</div>'
+                                        . '</div>'
+                                    );
+                                }),
                         ])
                         ->action(function ($record, array $data) {
-                            $isDisburse = ($data['mode'] ?? 'approve_only') === 'approve_and_disburse';
-                            $disbursed = (float)($data['disbursed_amount'] ?? 0);
+                            try {
+                                app(UserLoanApprovalService::class)->approve(
+                                    $record,
+                                    $data['mode'] ?? 'approve_only',
+                                    $data['start_date'] ?? null,
+                                    isset($data['disbursed_amount']) ? (float) $data['disbursed_amount'] : null,
+                                );
 
-                            if ($isDisburse) {
-                                if ($disbursed <= 0) {
-                                    Notification::make()
-                                        ->title('Lỗi')
-                                        ->body('Số tiền giải ngân phải lớn hơn 0.')
-                                        ->danger()
-                                        ->send();
-                                    return;
-                                }
+                                $message = ($data['mode'] ?? 'approve_only') === 'approve_and_disburse'
+                                    ? 'Duyệt và giải ngân khoản vay thành công.'
+                                    : 'Duyệt khoản vay thành công.';
 
-                                if ($disbursed > $record->principal_amount) {
-                                    Notification::make()
-                                        ->title('Lỗi')
-                                        ->body('Số tiền giải ngân không được vượt quá số tiền vay.')
-                                        ->danger()
-                                        ->send();
-                                    return;
-                                }
+                                Notification::make()
+                                    ->title($message)
+                                    ->success()
+                                    ->send();
+                            } catch (\Throwable $e) {
+                                Notification::make()
+                                    ->title('Duyệt khoản vay thất bại')
+                                    ->body($e->getMessage())
+                                    ->danger()
+                                    ->send();
                             }
-
-                            $status = ($isDisburse && $disbursed > 0)
-                                ? LoanStatus::ACTIVE->value
-                                : LoanStatus::APPROVED->value;
-
-                            $updates = [
-                                'status' => $status,
-                            ];
-
-                            if ($status === LoanStatus::ACTIVE->value) {
-                                $updates['start_date'] = $data['start_date'] ?? now();
-                                $updates['disbursed_amount'] = $disbursed;
-                            }
-
-                            $record->update($updates);
-
-                            if ($isDisburse && $disbursed > 0) {
-                                try {
-                                    $paymentService = app(PaymentService::class);
-                                    $paymentService->createDisbursementPayment(
-                                        $record, 
-                                        $disbursed, 
-                                        "Giải ngân khoản vay #{$record->id} - " . number_format($disbursed) . " VNĐ"
-                                    );
-                                    
-                                    $userLoanLogService = app(UserLoanLogService::class);
-                                    $result = $userLoanLogService->generateLogsForLoan($record);
-                                    
-                                } catch (\Exception $e) {
-                                    Notification::make()
-                                        ->title('Lỗi tạo giao dịch thanh toán')
-                                        ->body('Đã duyệt khoản vay nhưng có lỗi khi tạo giao dịch thanh toán: ' . $e->getMessage())
-                                        ->warning()
-                                        ->send();
-                                }
-                            }
-
-                            $message = $status === LoanStatus::ACTIVE->value 
-                                ? "Duyệt và giải ngân thành công. Số tiền giải ngân: " . number_format($disbursed) . " VNĐ"
-                                : 'Duyệt đơn vay thành công (chưa giải ngân)';
-
-                            Notification::make()
-                                ->title($message)
-                                ->success()
-                                ->send();
                         }),
                     
                     Action::make('reject')
@@ -223,15 +219,20 @@ class UserLoansTable
                                 ->rows(3),
                         ])
                         ->action(function ($record, array $data) {
-                            $record->update([
-                                'status' => LoanStatus::REJECTED->value,
-                                'reject_reason' => $data['reject_reason'],
-                            ]);
-                            
-                            Notification::make()
-                                ->title('Từ chối đơn vay thành công')
-                                ->success()
-                                ->send();
+                            try {
+                                app(UserLoanApprovalService::class)->reject($record, $data['reject_reason']);
+
+                                Notification::make()
+                                    ->title('Từ chối đơn vay thành công')
+                                    ->success()
+                                    ->send();
+                            } catch (\Throwable $e) {
+                                Notification::make()
+                                    ->title('Từ chối đơn vay thất bại')
+                                    ->body($e->getMessage())
+                                    ->danger()
+                                    ->send();
+                            }
                         }),
                     
                     Action::make('send_notification')
@@ -272,5 +273,23 @@ class UserLoansTable
                     RestoreBulkAction::make(),
                 ]),
             ]);
+    }
+
+    private static function resolveBankQrCode(?string $bankName): string
+    {
+        $normalized = mb_strtolower((string) $bankName);
+
+        return match (true) {
+            str_contains($normalized, 'vietcombank'),
+            str_contains($normalized, 'ngoai thuong') => 'vcb',
+            str_contains($normalized, 'techcombank') => 'tcb',
+            str_contains($normalized, 'mb'),
+            str_contains($normalized, 'quan doi') => 'mbb',
+            str_contains($normalized, 'bidv') => 'bidv',
+            str_contains($normalized, 'agribank') => 'vba',
+            str_contains($normalized, 'vietinbank'),
+            str_contains($normalized, 'cong thuong') => 'icb',
+            default => 'vcb',
+        };
     }
 }

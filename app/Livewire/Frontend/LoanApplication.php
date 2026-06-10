@@ -44,6 +44,11 @@ class LoanApplication extends Component
 
     public function mount()
     {
+        $requestedTab = request()->query('tab');
+        if (in_array($requestedTab, ['pending', 'approved', 'paid'], true)) {
+            $this->tab = $requestedTab;
+        }
+
         if (Auth::check() || session('user')) {
             $this->loadLoansByTab();
             $this->message = '';

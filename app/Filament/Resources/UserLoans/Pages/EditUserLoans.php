@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\UserLoans\Pages;
 
 use App\Filament\Resources\UserLoans\UserLoansResource;
+use App\Services\UserLoanApprovalService;
 use App\Models\Payment;
 use App\Models\User;
 use App\Models\UserBankAccount;
@@ -11,12 +12,21 @@ use App\Services\LoanCalculationService;
 use App\Services\PaymentService;
 use App\Services\UserLoanLogService;
 use App\Traits\UserLoanFormLogic;
+use App\Utils\Helper;
 use App\Utils\Constants\LoanStatus;
 use App\Utils\Constants\PaymentDirection;
+use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Support\HtmlString;
 
 class EditUserLoans extends EditRecord
 {
@@ -38,6 +48,138 @@ class EditUserLoans extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('approveLoan')
+                ->label('Duyệt khoản vay')
+                ->icon('heroicon-o-check-circle')
+                ->color('success')
+                ->visible(fn () => $this->getRecord()->status === LoanStatus::PENDING->value)
+                ->form([
+                    Select::make('mode')
+                        ->label('Chế độ')
+                        ->live()
+                        ->options([
+                            'approve_only' => 'Chỉ duyệt (chưa giải ngân)',
+                            'approve_and_disburse' => 'Duyệt và giải ngân',
+                        ])
+                        ->default('approve_only')
+                        ->required(),
+                    DatePicker::make('start_date')
+                        ->label('Ngày bắt đầu vay')
+                        ->default(now())
+                        ->visible(fn ($get) => $get('mode') === 'approve_and_disburse'),
+                    TextInput::make('disbursed_amount')
+                        ->label('Số tiền giải ngân (VNĐ)')
+                        ->numeric()
+                        ->default(fn () => $this->getRecord()->principal_amount)
+                        ->minValue(0)
+                        ->maxValue(fn () => $this->getRecord()->principal_amount)
+                        ->suffix('VNĐ')
+                        ->visible(fn ($get) => $get('mode') === 'approve_and_disburse')
+                        ->required(fn ($get) => $get('mode') === 'approve_and_disburse'),
+                    Placeholder::make('payment_qr')
+                        ->label('QR thanh toán')
+                        ->visible(fn ($get) => $get('mode') === 'approve_and_disburse')
+                        ->content(function ($get) {
+                            $record = $this->getRecord();
+                            $bankAccount = UserBankAccount::query()
+                                ->where('user_id', $record->user_id)
+                                ->first();
+
+                            if (!$bankAccount || empty($bankAccount->bank_name) || empty($bankAccount->account_number) || empty($bankAccount->account_name)) {
+                                return new HtmlString('<p class="text-sm text-gray-500">Người dùng chưa có đủ thông tin tài khoản ngân hàng để tạo QR.</p>');
+                            }
+
+                            $amount = (int) ($get('disbursed_amount') ?: $record->principal_amount);
+                            $bankCode = self::resolveBankQrCode($bankAccount->bank_name);
+                            $description = 'GIAI NGAN ' . $record->id;
+                            $accountName = mb_strtoupper($bankAccount->account_name);
+                            $qrUrl = Helper::generateQRCodeBanking(
+                                $bankCode,
+                                $bankAccount->account_number,
+                                $accountName,
+                                $amount,
+                                $description,
+                                'compact2',
+                            );
+
+                            return new HtmlString(
+                                '
+                                <div class="space-y-3 rounded-lg border border-gray-200 p-4">'
+                                . '<img src="' . e($qrUrl) . '" alt="QR thanh toán" class="mx-auto h-56 w-56 object-contain" />'
+                                . '<div class="space-y-1 text-sm">'
+                                . '<p><strong>Ngân hàng:</strong> ' . e($bankAccount->bank_name) . '</p>'
+                                . '<p><strong>Số tài khoản:</strong> ' . e($bankAccount->account_number) . '</p>'
+                                . '<p><strong>Tên tài khoản:</strong> ' . e($bankAccount->account_name) . '</p>'
+                                . '<p><strong>Số tiền:</strong> ' . number_format($amount) . ' VNĐ</p>'
+                                . '</div>'
+                                . '</div>'
+                            );
+                        }),
+                ])
+                ->action(function (array $data): void {
+                    try {
+                        app(UserLoanApprovalService::class)->approve(
+                            $this->getRecord(),
+                            $data['mode'] ?? 'approve_only',
+                            $data['start_date'] ?? null,
+                            isset($data['disbursed_amount']) ? (float) $data['disbursed_amount'] : null,
+                        );
+
+                        Notification::make()
+                            ->title('Duyệt khoản vay thành công')
+                            ->success()
+                            ->send();
+
+                        $this->refreshFormData([
+                            'status',
+                            'start_date',
+                            'disbursed_amount',
+                            'reject_reason',
+                            'total_paid_amount',
+                        ]);
+                    } catch (\Throwable $e) {
+                        Notification::make()
+                            ->title('Duyệt khoản vay thất bại')
+                            ->body($e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
+                }),
+            Action::make('rejectLoan')
+                ->label('Từ chối khoản vay')
+                ->icon('heroicon-o-x-circle')
+                ->color('danger')
+                ->visible(fn () => $this->getRecord()->status === LoanStatus::PENDING->value)
+                ->form([
+                    Textarea::make('reject_reason')
+                        ->label('Lý do từ chối')
+                        ->required()
+                        ->rows(3),
+                ])
+                ->action(function (array $data): void {
+                    try {
+                        app(UserLoanApprovalService::class)->reject(
+                            $this->getRecord(),
+                            $data['reject_reason'],
+                        );
+
+                        Notification::make()
+                            ->title('Từ chối khoản vay thành công')
+                            ->success()
+                            ->send();
+
+                        $this->refreshFormData([
+                            'status',
+                            'reject_reason',
+                        ]);
+                    } catch (\Throwable $e) {
+                        Notification::make()
+                            ->title('Từ chối khoản vay thất bại')
+                            ->body($e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
+                }),
             DeleteAction::make(),
             ForceDeleteAction::make(),
             RestoreAction::make(),
@@ -219,5 +361,23 @@ class EditUserLoans extends EditRecord
                 $firstLog->update(['total_paid' => $totalPaidFromForm]);
             }
         }
+    }
+
+    private static function resolveBankQrCode(?string $bankName): string
+    {
+        $normalized = mb_strtolower((string) $bankName);
+
+        return match (true) {
+            str_contains($normalized, 'vietcombank'),
+            str_contains($normalized, 'ngoai thuong') => 'vcb',
+            str_contains($normalized, 'techcombank') => 'tcb',
+            str_contains($normalized, 'mb'),
+            str_contains($normalized, 'quan doi') => 'mbb',
+            str_contains($normalized, 'bidv') => 'bidv',
+            str_contains($normalized, 'agribank') => 'vba',
+            str_contains($normalized, 'vietinbank'),
+            str_contains($normalized, 'cong thuong') => 'icb',
+            default => 'vcb',
+        };
     }
 }

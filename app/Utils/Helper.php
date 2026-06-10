@@ -70,13 +70,14 @@ final class Helper
         return ((int) $hour) * 60 + ((int) $minute);
     }
 
-    public static function generateQRCodeBanking($binBank, $bankNumber, $bankName, $amount, $addInfo = null): string
+    public static function generateQRCodeBanking($binBank, $bankNumber, $bankName, $amount, $addInfo = null, string $template = 'print'): string
     {
+        $url = "https://img.vietqr.io/image/{$binBank}-{$bankNumber}-{$template}.png?amount=" . (int) $amount . '&accountName=' . rawurlencode($bankName);
 
-        $url = "https://img.vietqr.io/image/{$binBank}-{$bankNumber}-print.jpg?amount={$amount}&accountName={$bankName}";
         if ($addInfo) {
-            $url .= "&addInfo=" . urlencode($addInfo);
+            $url .= '&addInfo=' . rawurlencode($addInfo);
         }
+
         return $url;
     }
 

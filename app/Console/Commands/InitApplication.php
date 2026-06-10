@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use App\Models\Bank;
 use App\Models\Config;
+use App\Models\LoanPackage;
 use App\Models\User;
 use App\Utils\Constants\RoleUser;
 use Illuminate\Support\Facades\Hash;
@@ -68,14 +69,28 @@ class InitApplication extends Command
         $r1 = $this->seedingPageStatic();
         if (!$r1) {
             DB::rollBack();
-            $this->error('Lỗi khi chạy Seeding demo database r2!');
+            $this->error('Lỗi khi seed page static!');
             return Command::FAILURE;
         }
 
         $r2 = $this->seedingConfig();
         if (!$r2) {
             DB::rollBack();
-            $this->error('Lỗi khi chạy Seeding demo database r3!');
+            $this->error('Lỗi khi seed config!');
+            return Command::FAILURE;
+        }
+
+        $r3 = $this->seedingBank();
+        if (!$r3) {
+            DB::rollBack();
+            $this->error('Lỗi khi seed bank!');
+            return Command::FAILURE;
+        }
+
+        $r4 = $this->seedingLoanPackage();
+        if (!$r4) {
+            DB::rollBack();
+            $this->error('Lỗi khi seed loan package!');
             return Command::FAILURE;
         }
 
@@ -182,6 +197,110 @@ class InitApplication extends Command
             return true;
         }catch (\Exception $exception){
             $this->error('Lỗi seeding config: ' . $exception->getMessage());
+            return false;
+        }
+    }
+
+    private function seedingBank(): bool
+    {
+        try {
+            $response = Http::timeout(30)
+                ->acceptJson()
+                ->get('https://api.vietqr.io/v2/banks');
+
+            if (!$response->successful()) {
+                $this->error('Không thể lấy danh sách ngân hàng từ VietQR. HTTP status: ' . $response->status());
+                return false;
+            }
+
+            $banks = $response->json('data');
+            if (!is_array($banks)) {
+                $this->error('Dữ liệu ngân hàng từ VietQR không hợp lệ.');
+                return false;
+            }
+
+            $seededCount = 0;
+            foreach ($banks as $bankData) {
+                $code = trim((string) ($bankData['code'] ?? ''));
+                $name = trim((string) ($bankData['name'] ?? ''));
+
+                if ($code === '' || $name === '') {
+                    continue;
+                }
+
+                $bank = Bank::query()
+                    ->withTrashed()
+                    ->updateOrCreate(
+                        ['code' => $code],
+                        ['name' => $name],
+                    );
+
+                if ($bank->trashed()) {
+                    $bank->restore();
+                }
+
+                $seededCount++;
+            }
+
+            if ($seededCount === 0) {
+                $this->error('Không có ngân hàng hợp lệ để seed từ VietQR.');
+                return false;
+            }
+
+            $this->info("Đã seed {$seededCount} ngân hàng từ VietQR.");
+            return true;
+        } catch (\Exception $exception) {
+            $this->error('Lỗi seeding bank: ' . $exception->getMessage());
+            return false;
+        }
+    }
+
+    private function seedingLoanPackage(): bool
+    {
+        try {
+            $defaultConfig = [
+                'name' => 'Gói vay mặc định',
+                'term_month' => [7, 14],
+                'interest_rate' => 0,
+                'penalty_rate' => 0,
+                'min_amount' => 2000000,
+                'max_amount' => 20000000,
+                'active' => true,
+            ];
+
+            $loanPackage = LoanPackage::query()
+                ->where('config_loans->name', $defaultConfig['name'])
+                ->first();
+
+            if ($loanPackage) {
+                $loanPackage->update([
+                    'config_loans' => $defaultConfig,
+                ]);
+            } else {
+                $loanPackage = LoanPackage::query()->create([
+                    'config_loans' => $defaultConfig,
+                ]);
+            }
+
+            LoanPackage::query()
+                ->where('id', '!=', $loanPackage->id)
+                ->get()
+                ->each(function (LoanPackage $package): void {
+                    $config = $package->config_loans;
+                    if (!is_array($config)) {
+                        $config = json_decode($config ?? '{}', true) ?: [];
+                    }
+
+                    if (($config['active'] ?? false) === true) {
+                        $config['active'] = false;
+                        $package->update(['config_loans' => $config]);
+                    }
+                });
+
+            $this->info('Đã seed gói vay mặc định.');
+            return true;
+        } catch (\Exception $exception) {
+            $this->error('Lỗi seeding loan package: ' . $exception->getMessage());
             return false;
         }
     }
