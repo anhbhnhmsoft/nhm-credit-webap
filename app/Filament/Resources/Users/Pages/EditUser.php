@@ -8,6 +8,8 @@ use Filament\Resources\Pages\EditRecord;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Crypt;
 class EditUser extends EditRecord
 {
     protected static string $resource = UserResource::class;
@@ -38,6 +40,18 @@ class EditUser extends EditRecord
     {
         return parent::getCancelFormAction()
             ->label('Hủy');
+    }
+
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        if (!empty($data['new_password'])) {
+            $plainPassword = $data['new_password'];
+            $data['password'] = Hash::make($plainPassword);
+            $data['hash_encrypt'] = Crypt::encryptString($plainPassword);
+        }
+
+        return $data;
     }
 
     protected function afterFill(): void

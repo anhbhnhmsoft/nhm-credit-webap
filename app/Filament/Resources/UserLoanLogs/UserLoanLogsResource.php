@@ -49,6 +49,7 @@ class UserLoanLogsResource extends Resource
     {
         return [
             'index' => ListUserLoanLogs::route('/'),
+            'edit' => EditUserLoanLogs::route('/{record}/edit'),
         ];
     }
 

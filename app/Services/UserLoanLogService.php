@@ -11,87 +11,18 @@ use Illuminate\Support\Facades\DB;
 
 class UserLoanLogService
 {
-    public function generateDailyLogs(): array
-    {
-        $created = 0;
-
-        $loans = UserLoan::query()
-            ->where('status', '=',  LoanStatus::ACTIVE->value)
-            ->whereNotNull('start_date')
-            ->get();
-
-        foreach ($loans as $loan) {
-            $termMonths = (int) $loan->term_months;
-            if ($termMonths <= 0) {
-                continue;
-            }
-
-            $interestTermPercent = (float) $loan->interest_rate_year; // % cho toàn kỳ hạn
-            $monthlyPayment = app(LoanCalculationService::class)->calcMonthlyPayment(
-                (float) ($loan->disbursed_amount ?: $loan->principal_amount),
-                0,
-                $termMonths,
-                $interestTermPercent
-            );
-
-            $outstanding = (float) ($loan->disbursed_amount ?: $loan->principal_amount);
-
-            $existingCount = UserLoanLog::query()
-                ->where('user_loan_id', $loan->id)
-                ->count();
-
-            for ($k = $existingCount + 1; $k <= $termMonths; $k++) {
-                $interestDue = round((($outstanding) * ($interestTermPercent / 100)) / $termMonths, 2);
-                $principalDue = round($monthlyPayment - $interestDue, 2);
-
-                if ($k === $termMonths) {
-                    $principalDue = round($outstanding, 2);
-                    $monthlyDue = $principalDue + $interestDue;
-                }
-
-                $dueDate = ($loan->start_date instanceof Carbon ? $loan->start_date->copy() : Carbon::parse($loan->start_date))
-                    ->addMonths($k);
-
-                $exists = UserLoanLog::query()
-                    ->where('user_loan_id', $loan->id)
-                    ->where('installment_no', $k)
-                    ->exists();
-
-                if ($exists) {
-                    $outstanding = max($outstanding - $principalDue, 0);
-                    continue;
-                }
-
-                DB::transaction(function () use ($loan, $k, $dueDate, $principalDue, $interestDue, &$created) {
-                    UserLoanLog::create([
-                        'user_loan_id' => $loan->id,
-                        'installment_no' => $k,
-                        'due_date' => $dueDate,
-                        'actual_due_date' => null,
-                        'principal_due' => $principalDue,
-                        'interest_due' => $interestDue,
-                        'fee_due' => 0,
-                        'total_paid' => 0,
-                        'status' => LoanLogStatus::PENDING->value,
-                    ]);
-                    $created++;
-                });
-
-                $outstanding = max($outstanding - $principalDue, 0);
-            }
-        }
-
-        return [
-            'status' => true,
-            'message' => "Đã tạo {$created} kỳ trả nợ mới",
-            'created' => $created,
-        ];
-    }
+    
 
     public function generateLogsForLoan(UserLoan $loan): array
     {
-        $created = 0;
-
+        $termMonths = $this->parseTermMonths($loan->term_months);
+        if ($termMonths <= 0) {
+            return [
+                'status' => false,
+                'message' => 'Kỳ hạn vay không hợp lệ',
+                'created' => 0,
+            ];
+        }
         if ($loan->status !== LoanStatus::ACTIVE->value || !$loan->start_date) {
             return [
                 'status' => false,
@@ -113,16 +44,15 @@ class UserLoanLogService
         }
 
         $principalAmount = (float) ($loan->total_due_amount);
-        $interestAmount = (float) $loan->interest_rate_year; // Phí quá hạn
+        $interestAmount = (float) $loan->interest_rate_year;
         $serviceFee = (float) $loan->service_fee_amount;
-        $totalDue = $principalAmount + $interestAmount + $serviceFee;
 
         $dueDate = $loan->due_date ? Carbon::parse($loan->due_date) : null;
 
-        DB::transaction(function () use ($loan, $principalAmount, $interestAmount, $serviceFee, $totalDue, $dueDate, &$created) {
+        DB::transaction(function () use ($loan, $principalAmount, $interestAmount, $serviceFee, $termMonths, $dueDate, &$created) {
             UserLoanLog::create([
                 'user_loan_id' => $loan->id,
-                'installment_no' => 1,
+                'installment_no' => $termMonths,
                 'due_date' => $dueDate,
                 'actual_due_date' => null,
                 'principal_due' => $principalAmount,
@@ -167,6 +97,21 @@ class UserLoanLogService
             ->where('status', LoanLogStatus::PAID->value)
             ->orderBy('actual_due_date', 'desc')
             ->get();
+    }
+
+    private function parseTermMonths($termMonths): int
+    {
+        if (empty($termMonths)) {
+            return 0;
+        }
+        
+        preg_match('/(\d+)/', (string) $termMonths, $matches);
+        
+        if (empty($matches[1])) {
+            return 0;
+        }
+        
+        return (int) $matches[1];
     }
 }
 

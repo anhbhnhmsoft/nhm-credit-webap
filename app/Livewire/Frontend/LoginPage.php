@@ -16,6 +16,11 @@ class LoginPage extends Component
         $this->validate([
             'phone' => 'required|string|max:20',
             'password' => 'required|string|min:6',
+        ], [
+            'phone.required' => 'Vui lòng nhập số điện thoại.',
+            'password.required' => 'Vui lòng nhập mật khẩu.',
+            'password.min' => 'Mật khẩu tối thiểu 6 ký tự.',
+            'phone.max' => 'Số điện thoại không được quá 20 ký tự.',
         ]);
 
         $credentials = [
@@ -26,7 +31,7 @@ class LoginPage extends Component
         if (Auth::attempt($credentials)) {
             return redirect()->route('profile');
         } else {
-            session()->flash('error', 'Số điện thoại hoặc mật khẩu không đúng.');
+            $this->addError('phone', 'Số điện thoại hoặc mật khẩu không đúng.');
         }
     }
 

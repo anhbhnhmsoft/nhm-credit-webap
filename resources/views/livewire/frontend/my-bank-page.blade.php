@@ -2,13 +2,13 @@
 
 <div class="h-full w-full overflow-y-auto sm:overflow-x-hidden">
     <div class="w-full flex flex-col justify-start items-start">
-        <div class="bg-[#800080] w-full flex items-center justify-between px-4 py-4">
-            <a href="{{ route('profile') }}" class="text-white">
+        <div class="bg-[#fef4bf] w-full flex items-center justify-between px-4 py-4">
+            <a href="{{ route('profile') }}" class="text-black">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                 </svg>
             </a>
-            <h1 class="text-white text-lg font-medium">Tài khoản nhận tiền</h1>
+            <h1 class="text-black text-lg font-medium">Tài khoản nhận tiền</h1>
             <div class="w-6 h-6"></div>
         </div>
         @if(Auth::check())
@@ -20,7 +20,7 @@
                                     <div class="flex-1">
                                         <div class="flex justify-between items-center mb-2">
                                             <span class="text-gray-600 text-sm">Ngân hàng nhận tiền</span>
-                                            <span class="font-bold text-black">{{ $bankAccount['bank']['name'] ?? 'N/A' }}</span>
+                                            <span class="font-bold text-black">{{ $bankAccount['bank_name'] ?? 'N/A' }}</span>
                                         </div>
                                         <div class="border-t border-gray-200 pt-2">
                                             <div class="flex justify-between items-center">
@@ -37,10 +37,10 @@
                                     </div>
                                     <div class="ml-4 flex flex-col space-y-2">
 
-                                        <button wire:click="showEditForm({{ $bankAccount['id'] }})" 
+                                        {{-- <button wire:click="showEditForm({{ $bankAccount['id'] }})" 
                                                 class="text-blue-600 text-xs hover:text-blue-800">
                                             Sửa
-                                        </button>
+                                        </button> --}}
                                     
                                     </div>
                                 </div>
@@ -60,7 +60,7 @@
                 @if(empty($bankAccount))
                 <div class="p-4">
                     <button wire:click="showAddForm" 
-                            class="w-full bg-[#800080] text-white py-3 px-4 rounded-lg font-medium hover:bg-[#6a006a] transition-colors">
+                            class="w-full bg-[#fef4bf] text-black py-3 px-4 rounded-lg font-medium hover:bg-[#efdd7e] transition-colors">
                         Thêm tài khoản ngân hàng
                     </button>
                 </div>
@@ -111,7 +111,7 @@
                             Hủy
                         </button>
                         <button type="submit" 
-                                class="flex-1 bg-[#800080] text-white py-2 px-4 rounded-lg hover:bg-[#6a006a] transition-colors">
+                                class="flex-1 bg-[#fef4bf] text-black py-2 px-4 rounded-lg hover:bg-[#efdd7e] transition-colors">
                             {{ $editingAccount ? 'Cập nhật' : 'Thêm' }}
                         </button>
                     </div>

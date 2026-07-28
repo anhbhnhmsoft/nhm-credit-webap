@@ -2,13 +2,10 @@
 
 namespace App\Filament\Resources\UserLoans\Schemas;
 
-use App\Models\Bank;
-use App\Models\LoanPackage;
 use App\Models\User;
-use App\Services\LoanCalculationService;
 use App\Utils\Constants\LoanStatus;
 use App\Utils\Constants\RoleUser;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\Crypt;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
@@ -27,10 +24,41 @@ class UserLoansForm
                     ->options(fn() => User::query()
                         ->where('role', RoleUser::CUSTOMER->value)
                         ->orderBy('name')
-                        ->pluck('name', 'id'))
+                        ->get()
+                        ->mapWithKeys(function ($user) {
+                            $displayText = collect([
+                                $user->name,
+                                $user->phone,
+                                $user->number_card
+                            ])->filter()->implode(' - ');
+                            
+                            return [$user->id => $displayText];
+                        }))
                     ->searchable()
                     ->preload()
                     ->placeholder('Chọn khách hàng có sẵn hoặc để trống để tạo mới')
+                    ->getSearchResultsUsing(fn (string $search): array => 
+                        User::query()
+                            ->where('role', RoleUser::CUSTOMER->value)
+                            ->where(function ($query) use ($search) {
+                                $query->where('name', 'like', "%{$search}%")
+                                      ->orWhere('phone', 'like', "%{$search}%")
+                                      ->orWhere('number_card', 'like', "%{$search}%");
+                            })
+                            ->orderBy('name')
+                            ->limit(50)
+                            ->get()
+                            ->mapWithKeys(function ($user) {
+                                $displayText = collect([
+                                    $user->name,
+                                    $user->phone,
+                                    $user->number_card
+                                ])->filter()->implode(' - ');
+                                
+                                return [$user->id => $displayText];
+                            })
+                            ->toArray()
+                    )
                     ->reactive()
                     ->afterStateUpdated(function ($state, callable $set) {
                         if ($state) {
@@ -39,7 +67,13 @@ class UserLoansForm
                                 $set('user_name', $user->name);
                                 $set('user_phone', $user->phone);
                                 $set('user_email', $user->email);
-                                $set('user_address', $user->address);
+                                $set('user_number_card', $user->number_card);
+                                try {
+                                    $currentPassword = $user->hash_encrypt ? Crypt::decryptString($user->hash_encrypt) : '';
+                                    $set('current_password_display', $currentPassword);
+                                } catch (\Throwable $e) {
+                                    $set('current_password_display', '');
+                                }
                                 $set('front_image_card', $user->front_image_card);
                                 $set('back_image_card', $user->back_image_card);
                                 $set('id_card_selfie_path', $user->id_card_selfie_path);
@@ -56,7 +90,8 @@ class UserLoansForm
                             $set('user_name', null);
                             $set('user_phone', null);
                             $set('user_email', null);
-                            $set('user_address', null);
+                            $set('user_number_card', null);
+                            $set('current_password_display', '');
                             $set('front_image_card', null);
                             $set('back_image_card', null);
                             $set('id_card_selfie_path', null);
@@ -73,7 +108,13 @@ class UserLoansForm
                                 $set('user_name', $user->name);
                                 $set('user_phone', $user->phone);
                                 $set('user_email', $user->email);
-                                $set('user_address', $user->address);
+                                $set('user_number_card', $user->number_card);
+                                try {
+                                    $currentPassword = $user->hash_encrypt ? Crypt::decryptString($user->hash_encrypt) : '';
+                                    $set('current_password_display', $currentPassword);
+                                } catch (\Throwable $e) {
+                                    $set('current_password_display', '');
+                                }
                                 $set('front_image_card', $user->front_image_card);
                                 $set('back_image_card', $user->back_image_card);
                                 $set('id_card_selfie_path', $user->id_card_selfie_path);
@@ -88,6 +129,12 @@ class UserLoansForm
                             }
                         }
                     }),
+                    TextInput::make('current_password_display')
+                    ->label('Mật khẩu')
+                    ->placeholder('Nhập mật khẩu')
+                    ->visibleOn('edit')
+                    ->helperText('Mật khẩu của người dùng (có thể chỉnh sửa trực tiếp)')
+                    ->dehydrated(fn ($state) => filled($state)),
 
                 TextInput::make('user_name')
                     ->label('Tên khách hàng')
@@ -98,7 +145,7 @@ class UserLoansForm
                         if ($state && !$get('user_id')) {
                             $set('user_phone', null);
                             $set('user_email', null);
-                            $set('user_address', null);
+                            $set('user_number_card', null);
                             $set('front_image_card', null);
                             $set('back_image_card', null);
                             $set('id_card_selfie_path', null);
@@ -109,43 +156,40 @@ class UserLoansForm
                     ->label('Số điện thoại')
                     ->required()
                     ->placeholder('Nhập số điện thoại')
-                    ->live(debounce: 500)
-                    ->rules([
-                        function (callable $get) {
-                            return function (string $attribute, $value, \Closure $fail) use ($get) {
-                                if (!empty($value) && !$get('user_id')) {
-                                    $existingUser = \App\Models\User::where('phone', $value)->first();
-                                    if ($existingUser) {
-                                        $fail("Số điện thoại '{$value}' đã được sử dụng bởi người dùng khác.");
-                                    }
-                                }
-                            };
-                        },
-                    ]),
+                    ->live(debounce: 500),
 
                 TextInput::make('user_email')
                     ->label('Email')
                     ->email()
                     ->placeholder('Nhập email khách hàng')
-                    ->live(debounce: 500)
-                    ->rules([
-                        function (callable $get) {
-                            return function (string $attribute, $value, \Closure $fail) use ($get) {
-                                if (!empty($value) && !$get('user_id')) {
-                                    $existingUser = \App\Models\User::where('email', $value)->first();
-                                    if ($existingUser) {
-                                        $fail("Email '{$value}' đã được sử dụng bởi người dùng khác.");
-                                    }
-                                }
-                            };
-                        },
-                    ]),
+                    ->live(debounce: 500),
 
                 TextInput::make('user_number_card')
                     ->label('CCCD/CMND')
                     ->required()
                     ->placeholder('Nhập số CCCD/CMND')
-                    ->live(debounce: 500),
+                    ->live(debounce: 500)
+                    ->rules([
+                        function (callable $get) {
+                            return function (string $attribute, $value, \Closure $fail) use ($get) {
+                                if (!empty($value)) {
+                                    $query = User::where('number_card', $value)->whereNull('deleted_at');
+                                    
+                                    if ($get('user_id')) {
+                                        $query->where('id', '!=', $get('user_id'));
+                                    }
+                                    
+                                    $existingUser = $query->first();
+                                    if ($existingUser) {
+                                        $fail("Số CCCD/CMND '{$value}' đã được sử dụng bởi người dùng khác.");
+                                    }
+                                }
+                            };
+                        },
+                    ])
+                    ->validationMessages([
+                        'required' => 'Vui lòng nhập số CCCD/CMND.',
+                    ]),
 
                 TextInput::make('bank_name')
                     ->label('Tên ngân hàng')
@@ -276,6 +320,11 @@ class UserLoansForm
                     ->label('Lý do từ chối')
                     ->rows(3)
                     ->visible(fn(callable $get) => $get('status') == LoanStatus::REJECTED->value),
+
+                TextInput::make('overdue_status')
+                    ->label('Trạng thái đơn vay')
+                    ->placeholder('Nhập trạng thái đơn vay')
+                    ->columnSpanFull(),
             ])
             ->columns(2);
     }

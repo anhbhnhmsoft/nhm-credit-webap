@@ -11,13 +11,20 @@
         </div>
     @endif
     
-    <div class="tabs tabs-boxed mb-4">
-        <a class="tab {{ $tab == 'pending' ? 'tab-active border-b-4 border-blue-500' : '' }} text-[12px]"
+    <style>
+        @media (max-width: 414px) {
+            .loan-tabs .tab { font-size: 10px; padding: 0.25rem 0.25rem; white-space: nowrap; }
+        }
+    </style>
+    <div class="tabs tabs-boxed mb-2 overflow-x-auto whitespace-nowrap loan-tabs">
+        <div class="flex gap-1 justify-center mx-auto w-max">
+        <a class="tab inline-flex {{ $tab == 'pending' ? 'tab-active border-b-4 border-blue-500' : '' }} text-[12px] px-3 py-1"
             wire:click.prevent="changeTab('pending')">Đang đợi hoàn trả</a>
-        <a class="tab {{ $tab == 'approved' ? 'tab-active border-b-4 border-blue-500' : '' }} text-[12px]"
+        <a class="tab inline-flex {{ $tab == 'approved' ? 'tab-active border-b-4 border-blue-500' : '' }} text-[12px] px-3 py-1"
             wire:click.prevent="changeTab('approved')">Kết quả xét duyệt</a>
-        <a class="tab {{ $tab == 'paid' ? 'tab-active border-b-4 border-blue-500' : '' }} text-[12px]"
+        <a class="tab inline-flex {{ $tab == 'paid' ? 'tab-active border-b-4 border-blue-500' : '' }} text-[12px] px-3 py-1"
             wire:click.prevent="changeTab('paid')">Trả nợ thành công</a>
+        </div>
     </div>
     
         <div class="w-full px-4 pb-20">

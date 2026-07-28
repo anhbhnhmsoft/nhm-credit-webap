@@ -2,13 +2,13 @@
 
 <div class="h-full w-full overflow-y-auto sm:overflow-x-hidden">
     <div class="w-full flex flex-col justify-start items-start">
-        <div class="bg-[#800080] w-full flex items-center justify-between px-4 py-4">
-            <a href="{{ route('loan-detail', ['id' => $loanLogId]) }}" class="text-white">
+        <div class="bg-[#fef4bf] w-full flex items-center justify-between px-4 py-4">
+            <a href="{{ route('loan-detail', ['id' => $loanLogId]) }}" class="text-black">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                 </svg>
             </a>
-            <h1 class="text-white text-lg font-medium">Thanh toán trực tuyến</h1>
+            <h1 class="text-black text-lg font-medium">Thanh toán trực tuyến</h1>
             <div class="w-6 h-6"></div>
         </div>
 
@@ -47,7 +47,7 @@
                         
                         <div class="flex justify-between items-center">
                             <span class="text-sm text-gray-600">Số tiền cần trả:</span>
-                            <span class="text-lg font-bold text-[#800080]">{{ number_format($totalDue, 0, ',', '.') }} VND</span>
+                            <span class="text-lg font-bold text-black">{{ number_format($totalDue, 0, ',', '.') }} VND</span>
                         </div>
                     </div>
                 </div>

@@ -41,7 +41,7 @@ class UserLoanLogsForm
                     ->label('Ngày trả thực tế'),
 
                 TextInput::make('principal_due')
-                    ->label('Gốc phải trả')
+                    ->label('Số tiền phải trả')
                     ->numeric()
                     ->default(0)
                     ->minValue(0)

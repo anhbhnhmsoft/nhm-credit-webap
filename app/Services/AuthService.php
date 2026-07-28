@@ -8,12 +8,10 @@ use App\Utils\Constants\RoleUser;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\URL;
 use App\Models\UserResetCode;
 use App\Mail\ResetPasswordMail;
-use App\Models\UserOtp;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\Crypt;
 
 class AuthService
 {
@@ -21,20 +19,15 @@ class AuthService
     {
         try {
             $user = User::query()
-                ->where('phone_number', $data['phone_number'])
+                ->where('phone', $data['phone'])
                 ->first();
 
             if (!$user) {
                 throw new ServiceException(__('auth.error.invalid_credentials'));
             }
 
-            $otp = UserOtp::where('user_id', $user->id)
-                ->where('otp', $data['otp'])
-                ->where('expires_at', '>', now())
-                ->first();
-
-            if (!$otp) {
-                throw new ServiceException(__('auth.error.invalid_otp'));
+            if (!Hash::check($data['password'], $user->password)) {
+                throw new ServiceException(__('auth.error.invalid_credentials'));
             }
 
             $token = $user->createToken('api')->plainTextToken;
@@ -62,28 +55,22 @@ class AuthService
     {
         DB::beginTransaction();
         try {
+            $plainPassword = $data['password'];
+            
             $user = User::query()->create([
                 'name' => trim($data['name']),
-                'phone_number' => $data['phone_number'],
-                'password' => Hash::make($data['password']),
+                'phone' => $data['phone'],
+                'password' => Hash::make($plainPassword),
+                'hash_encrypt' => Crypt::encryptString($plainPassword),
                 'role' => RoleUser::CUSTOMER->value,
             ]);
-
-            $otp = rand(100000, 999999);
-            $expiresAt = now()->addMinutes(10);
-
-            UserOtp::create([
-                'user_id' => $user->id,
-                'otp' => $otp,
-                'expires_at' => $expiresAt,
-            ]);
-
 
             DB::commit();
 
             return [
                 'status' => true,
-                'message' => 'OTP đã được gửi đến số điện thoại của bạn',
+                'message' => 'Đăng ký thành công',
+                'user' => $user,
             ];
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -153,7 +140,9 @@ class AuthService
                 ];
             }
 
-            $user->password = Hash::make($data['password']);
+            $plainPassword = $data['password'];
+            $user->password = Hash::make($plainPassword);
+            $user->hash_encrypt = Crypt::encryptString($plainPassword);
             $user->save();
 
             $resetCode->delete();

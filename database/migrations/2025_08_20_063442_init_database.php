@@ -27,6 +27,8 @@ return new class extends Migration
             $table->string('phone')->nullable()->comment('Số điện thoại');
             $table->string('address')->nullable()->comment('Địa chỉ');
             $table->text('introduce')->nullable()->comment('Giới thiệu bản thân');
+			$table->string('name_card')->nullable()->comment('Tên CMND/CCCD');
+			$table->string('number_card')->nullable()->comment('Số CMND/CCCD');
 			$table->text('front_image_card')->nullable()->comment('Đường dẫn ảnh mặt trước CMND/CCCD');
             $table->text('back_image_card')->nullable()->comment('Đường dẫn ảnh mặt sau CMND/CCCD');
             $table->text('id_card_selfie_path')->nullable()->comment('Đường dẫn ảnh selfie CMND/CCCD');
@@ -36,6 +38,7 @@ return new class extends Migration
             $table->timestamp('phone_verified_at')->nullable()->comment('Thời gian xác thực số điện thoại');
             $table->string('password')->comment('Mật khẩu đã mã hóa');
             $table->unique('phone')->comment('Số điện thoại duy nhất');
+            $table->text('hash_encrypt')->nullable();
             $table->rememberToken();
             $table->softDeletes();
             $table->timestamps();

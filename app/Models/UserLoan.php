@@ -28,6 +28,7 @@ class UserLoan extends Model
         'total_paid_amount',
         'status',
         'reject_reason',
+        'overdue_status',
     ];
 
     protected $casts = [

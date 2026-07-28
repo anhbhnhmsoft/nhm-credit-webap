@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\UserLoans\Pages;
 
-use App\Exceptions\ServiceException;
 use App\Filament\Resources\UserLoans\UserLoansResource;
 use App\Models\User;
 use App\Models\UserBankAccount;
@@ -15,6 +14,8 @@ use App\Utils\Constants\RoleUser;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
 
 class CreateUserLoans extends CreateRecord
 {
@@ -47,9 +48,12 @@ class CreateUserLoans extends CreateRecord
 
         if (empty($data['user_id']) && !empty($data['user_name'])) {
             try {
+                DB::beginTransaction();
                 $user = $this->createNewUser($data);
                 $data['user_id'] = $user->id;
+                DB::commit();
             } catch (\Exception $e) {
+                DB::rollBack();
                 throw new \Exception($e->getMessage());
             }
         } elseif (!empty($data['user_id'])) {
@@ -59,22 +63,36 @@ class CreateUserLoans extends CreateRecord
         return $data;
     }
 
+
     private function createNewUser(array $data): User
     {
-        if (!empty($data['user_email'])) {
-            $existingUser = User::where('email', $data['user_email'])->first();
-            if ($existingUser) {
-                throw new ServiceException("Email '{$data['user_email']}' đã được sử dụng bởi người dùng khác.");
+        if (!empty($data['user_number_card'])) {
+            $softDeletedUser = User::withTrashed()->where('number_card', $data['user_number_card'])->first();
+            if ($softDeletedUser && $softDeletedUser->trashed()) {
+                $softDeletedUser->restore();
+                $softDeletedUser->update([
+                    'name' => $data['user_name'],
+                    'phone' => $data['user_phone'] ?? $softDeletedUser->phone,
+                    'email' => $data['user_email'] ?? $softDeletedUser->email,
+                    'front_image_card' => $this->handleFileUpload($data['front_image_card'] ?? null) ?? $softDeletedUser->front_image_card,
+                    'back_image_card' => $this->handleFileUpload($data['back_image_card'] ?? null) ?? $softDeletedUser->back_image_card,
+                    'id_card_selfie_path' => $this->handleFileUpload($data['id_card_selfie_path'] ?? null) ?? $softDeletedUser->id_card_selfie_path,
+                ]);
+                
+                if (!empty($data['current_password_display'])) {
+                    $plainPassword = $data['current_password_display'];
+                    $softDeletedUser->update([
+                        'password' => Hash::make($plainPassword),
+                        'hash_encrypt' => Crypt::encryptString($plainPassword),
+                    ]);
+                }
+                
+                return $softDeletedUser;
             }
         }
-
-        if (!empty($data['user_phone'])) {
-            $existingUser = User::where('phone', $data['user_phone'])->first();
-            if ($existingUser) {
-                throw new ServiceException("Số điện thoại '{$data['user_phone']}' đã được sử dụng bởi người dùng khác.");
-            }
-        }
-
+        
+        $plainPassword = !empty($data['current_password_display']) ? $data['current_password_display'] : $data['user_phone'];
+        
         $user = User::create([
             'name' => $data['user_name'],
             'phone' => $data['user_phone'] ?? null,
@@ -84,7 +102,8 @@ class CreateUserLoans extends CreateRecord
             'back_image_card' => $this->handleFileUpload($data['back_image_card'] ?? null),
             'id_card_selfie_path' => $this->handleFileUpload($data['id_card_selfie_path'] ?? null),
             'role' => RoleUser::CUSTOMER->value,
-            'password' => Hash::make($data['user_phone']),
+            'password' => Hash::make($plainPassword),
+            'hash_encrypt' => Crypt::encryptString($plainPassword),
         ]);
 
         if ((!empty($data['bank_id']) || !empty($data['bank_name'])) && !empty($data['account_number']) && !empty($data['account_name'])) {
@@ -111,6 +130,12 @@ class CreateUserLoans extends CreateRecord
                 'email' => $data['user_email'] ?? $user->email,
                 'number_card' => $data['user_number_card'] ?? $user->number_card,
             ];
+
+            if (!empty($data['current_password_display'])) {
+                $plainPassword = $data['current_password_display'];
+                $updateData['password'] = Hash::make($plainPassword);
+                $updateData['hash_encrypt'] = Crypt::encryptString($plainPassword);
+            }
 
             if (isset($data['front_image_card'])) {
                 $updateData['front_image_card'] = $this->handleFileUpload($data['front_image_card']);

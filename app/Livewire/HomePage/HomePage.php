@@ -5,7 +5,6 @@ namespace App\Livewire\HomePage;
 use App\Models\Bank;
 use App\Models\LoanPackage;
 use App\Models\User;
-use App\Models\UserBankAccount;
 use App\Models\UserLoan;
 use App\Utils\Constants\LoanStatus;
 use Illuminate\Support\Facades\Auth;
@@ -30,24 +29,24 @@ class HomePage extends Component
 
     private const TERM_OPTIONS = [7, 14];
 
-    public $amount = 2000000;
+    public int $amount = 2000000;
     public array $quickAmounts = [2000000, 5000000, 10000000, 15000000, 20000000];
     public array $banks = [];
 
-    public $activeLoanPackage = null;
+    public ?LoanPackage $activeLoanPackage = null;
     public int $selectedTermDays = 7;
     public int $currentStep = 1;
 
-    public $bank_id = '';
-    public $account_number = '';
-    public $account_name = '';
+    public string $bank_id = '';
+    public string $account_number = '';
+    public string $account_name = '';
 
-    public $address = '';
-    public $name_card = '';
-    public $user_number_card = '';
-    public $front_image_card;
-    public $back_image_card;
-    public $id_card_selfie_path;
+    public string $address = '';
+    public string $name_card = '';
+    public string $user_number_card = '';
+    public mixed $front_image_card = null;
+    public mixed $back_image_card = null;
+    public mixed $id_card_selfie_path = null;
 
     public ?string $existing_front_image_card = null;
     public ?string $existing_back_image_card = null;
@@ -73,7 +72,6 @@ class HomePage extends Component
 
     public function mount(): void
     {
-        $this->activeLoanPackage = LoanPackage::whereJsonContains('config_loans->active', true)->first();
         $this->banks = Bank::query()
             ->orderBy('name')
             ->get(['id', 'name'])
@@ -83,22 +81,32 @@ class HomePage extends Component
             ])
             ->all();
 
-        $config = $this->getLoanConfig();
-        $this->amount = (int) data_get($config, 'min_amount', self::DEFAULT_LOAN_CONFIG['min_amount']);
+        $this->activeLoanPackage = LoanPackage::whereJsonContains('config_loans->active', true)->first();
+        
+        if ($this->activeLoanPackage) {
+            $config = $this->activeLoanPackage->config_loans;
+            $this->amount = data_get($config, 'min_amount', 2000000);
+            $minAmount = data_get($config, 'min_amount', 2000000);
+            $maxAmount = data_get($config, 'max_amount', 20000000);
+            $range = $maxAmount - $minAmount;
+            
+            $minK = $minAmount / 1000;
+            $maxK = $maxAmount / 1000;
+            
+            $this->quickAmounts = [
+                floor($minK / 1000) * 1000 * 1000,
+                floor(($minK + ($maxK - $minK) * 0.25) / 1000) * 1000 * 1000,
+                floor(($minK + ($maxK - $minK) * 0.5) / 1000) * 1000 * 1000,
+                floor(($minK + ($maxK - $minK) * 0.75) / 1000) * 1000 * 1000,
+                floor($maxK / 1000) * 1000 * 1000
+            ];
+            
+            $termDays = data_get($config, 'term_month', []);
+            if (is_array($termDays) && !empty($termDays)) {
+                $this->selectedTermDays = (int) $termDays[0];
+            }
+        }
 
-        [$minAmount, $maxAmount] = $this->getLoanAmountRange();
-        $minK = $minAmount / 1000;
-        $maxK = $maxAmount / 1000;
-
-        $this->quickAmounts = [
-            floor($minK / 1000) * 1000 * 1000,
-            floor(($minK + ($maxK - $minK) * 0.25) / 1000) * 1000 * 1000,
-            floor(($minK + ($maxK - $minK) * 0.5) / 1000) * 1000 * 1000,
-            floor(($minK + ($maxK - $minK) * 0.75) / 1000) * 1000 * 1000,
-            floor($maxK / 1000) * 1000 * 1000,
-        ];
-
-        $this->selectedTermDays = self::TERM_OPTIONS[0];
         $this->hydrateUserState();
     }
 
@@ -285,8 +293,10 @@ class HomePage extends Component
             return false;
         }
 
-        if (!in_array($this->selectedTermDays, self::TERM_OPTIONS, true)) {
-            session()->flash('error', 'Thời lượng vay không hợp lệ.');
+        $config = $this->getLoanConfig();
+        $termDays = array_map('intval', data_get($config, 'term_month', []));
+        if (!in_array($this->selectedTermDays, $termDays, true)) {
+            session()->flash('error', 'Kỳ hạn vay không hợp lệ.');
             return false;
         }
 
@@ -322,7 +332,9 @@ class HomePage extends Component
     private function getCurrentUser(): ?User
     {
         if (Auth::check()) {
-            return Auth::user()?->loadMissing('userBankAccounts');
+            return User::query()
+                ->with('userBankAccounts')
+                ->find(Auth::id());
         }
 
         $sessionUser = session('user');
@@ -330,9 +342,14 @@ class HomePage extends Component
             return null;
         }
 
+        $sessionUserId = data_get($sessionUser, 'id');
+        if (!$sessionUserId) {
+            return null;
+        }
+
         return User::query()
             ->with('userBankAccounts')
-            ->find($sessionUser->id);
+            ->find($sessionUserId);
     }
 
     private function hydrateUserState(): void
@@ -378,7 +395,7 @@ class HomePage extends Component
             || empty($user->id_card_selfie_path);
     }
 
-    private function storeUploadedFile($file, ?string $existingPath = null): ?string
+    private function storeUploadedFile(mixed $file, ?string $existingPath = null): ?string
     {
         if (empty($file)) {
             return $existingPath;

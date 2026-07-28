@@ -26,6 +26,8 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\HtmlString;
 
 class EditUserLoans extends EditRecord
@@ -35,6 +37,7 @@ class EditUserLoans extends EditRecord
     protected LoanCalculationService $loanCalculationService;
     protected PaymentService $paymentService;
     protected UserLoanLogService $userLoanLogService;
+    protected array $originalData = [];
 
     public function boot(LoanCalculationService $loanCalculationService, PaymentService $paymentService, UserLoanLogService $userLoanLogService): void
     {
@@ -196,9 +199,8 @@ class EditUserLoans extends EditRecord
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
-        // Load total_paid_amount từ UserLoanLog khi edit
         if (isset($data['id'])) {
-            $totalPaidFromLogs = \App\Models\UserLoanLog::where('user_loan_id', $data['id'])
+            $totalPaidFromLogs = UserLoanLog::where('user_loan_id', $data['id'])
                 ->sum('total_paid');
             $data['total_paid_amount'] = $totalPaidFromLogs;
         }
@@ -206,6 +208,15 @@ class EditUserLoans extends EditRecord
         $data = $this->fillAllRelatedInfo($data);
 
         if (!empty($data['user_id'])) {
+            $user = User::find($data['user_id']);
+            if ($user && $user->hash_encrypt) {
+                try {
+                    $data['current_password_display'] = Crypt::decryptString($user->hash_encrypt);
+                } catch (\Throwable $e) {
+                    $data['current_password_display'] = '';
+                }
+            }
+
             $bankAccount = UserBankAccount::where('user_id', $data['user_id'])->first();
             if ($bankAccount) {
                 $data['bank_id'] = $bankAccount->bank_id;
@@ -219,6 +230,8 @@ class EditUserLoans extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        $this->originalData = $this->getRecord()->getOriginal();
+        
         $data = $this->fillAllRelatedInfo($data);
 
         if (!empty($data['user_id'])) {
@@ -227,6 +240,7 @@ class EditUserLoans extends EditRecord
 
         return $data;
     }
+
 
     private function updateUserInfo(array $data): void
     {
@@ -238,6 +252,12 @@ class EditUserLoans extends EditRecord
                 'email' => $data['user_email'] ?? $user->email,
                 'number_card' => $data['user_number_card'] ?? $user->number_card,
             ];
+
+            if (!empty($data['current_password_display'])) {
+                $plainPassword = $data['current_password_display'];
+                $updateData['password'] = Hash::make($plainPassword);
+                $updateData['hash_encrypt'] = Crypt::encryptString($plainPassword);
+            }
 
             if (isset($data['front_image_card'])) {
                 $updateData['front_image_card'] = $this->handleFileUpload($data['front_image_card']);
@@ -300,6 +320,13 @@ class EditUserLoans extends EditRecord
     protected function afterSave(): void
     {
         $record = $this->getRecord();
+        
+
+        $shouldUpdate = $this->shouldUpdateUserLoanLogs($record);
+        
+        if ($shouldUpdate) {
+            $this->updateUserLoanLogs($record);
+        }
 
         if ($record->status === LoanStatus::ACTIVE->value && $record->start_date) {
             $result = $this->userLoanLogService->generateLogsForLoan($record);
@@ -363,21 +390,39 @@ class EditUserLoans extends EditRecord
         }
     }
 
-    private static function resolveBankQrCode(?string $bankName): string
+    private function shouldUpdateUserLoanLogs($record): bool
     {
-        $normalized = mb_strtolower((string) $bankName);
+        
+        if ($record->status !== LoanStatus::ACTIVE->value) {
+            return false;
+        }
 
-        return match (true) {
-            str_contains($normalized, 'vietcombank'),
-            str_contains($normalized, 'ngoai thuong') => 'vcb',
-            str_contains($normalized, 'techcombank') => 'tcb',
-            str_contains($normalized, 'mb'),
-            str_contains($normalized, 'quan doi') => 'mbb',
-            str_contains($normalized, 'bidv') => 'bidv',
-            str_contains($normalized, 'agribank') => 'vba',
-            str_contains($normalized, 'vietinbank'),
-            str_contains($normalized, 'cong thuong') => 'icb',
-            default => 'vcb',
-        };
+        $existingLog = UserLoanLog::where('user_loan_id', $record->id)->first();
+        if (!$existingLog) {
+            return false;
+        }
+        
+
+        $formData = $this->form->getState();
+        $fieldsToCheck = ['term_months', 'interest_rate_year', 'principal_amount', 'service_fee_amount', 'total_due_amount'];
+        
+        
+        foreach ($fieldsToCheck as $field) {
+            $originalValue = $this->originalData[$field] ?? null;
+            
+            
+            if (isset($formData[$field]) && $formData[$field] != $originalValue) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function updateUserLoanLogs($record): void
+    {
+        UserLoanLog::withTrashed()->where('user_loan_id', $record->id)->forceDelete();
+        
+        $this->userLoanLogService->generateLogsForLoan($record);
     }
 }

@@ -7,6 +7,8 @@ use App\Utils\Constants\RoleUser;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Actions\Action;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 
 class CreateUser extends CreateRecord
 {
@@ -43,7 +45,9 @@ class CreateUser extends CreateRecord
     protected function handleRecordCreation(array $data): Model
     {
         if(!empty($data['new_password'])) {
-            $data['password'] = $data['new_password'];
+            $plainPassword = $data['new_password'];
+            $data['password'] = Hash::make($plainPassword);
+            $data['hash_encrypt'] = Crypt::encryptString($plainPassword);
         }
         
         if (!isset($data['role']) || empty($data['role'])) {

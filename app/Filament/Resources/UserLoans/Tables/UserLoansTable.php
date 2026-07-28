@@ -43,7 +43,7 @@ class UserLoansTable
                     ->label('Số điện thoại')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('user.address')
+                TextColumn::make('user.number_card')
                     ->label('CCCD/CMND')
                     ->searchable()
                     ->sortable(),

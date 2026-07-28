@@ -2,13 +2,13 @@
 
 <div class="h-full w-full overflow-y-auto sm:overflow-x-hidden">
     <div class="w-full flex flex-col justify-start items-start">
-        <div class="bg-[#800080] w-full flex items-center justify-between px-4 py-4">
-            <a href="{{ route('loan-application') }}" class="text-white">
+        <div class="bg-[#fef4bf] w-full flex items-center justify-between px-4 py-4">
+            <a href="{{ route('loan-application') }}" class="text-black">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                 </svg>
             </a>
-            <h1 class="text-white text-lg font-medium">Chi tiết đơn vay</h1>
+            <h1 class="text-black text-lg font-medium">Chi tiết đơn vay</h1>
             <div class="w-6 h-6"></div>
         </div>
 
@@ -19,25 +19,30 @@
         @endif
 
         @if ($loan && $loanLog)
-            <div class="bg-[#800080] w-full relative h-[150px]">
+            <div class="bg-[#fef4bf] w-full relative h-[150px]">
                 <div class="bg-white rounded-lg mx-4 mt-8 p-6 shadow-2xl relative z-20 transform -translate-y-4">
                     <div class="text-center">
                         <p class="text-sm text-gray-600 mb-2">Tổng số tiền cần phải trả</p>
                         @php
                             $totalDue = (float) $loanLog->principal_due + (float) $loanLog->interest_due + (float) $loanLog->fee_due;
                         @endphp
-                        <div class="text-4xl font-bold text-[#800080] mb-6">{{ number_format($totalDue, 0, ',', '.') }} VND</div>
+                        <div class="text-4xl font-bold text-black mb-6">{{ number_format($totalDue, 0, ',', '.') }} VND</div>
                         
                         <div class="flex items-center justify-between">
                             <div class="text-left">
                                 <p class="text-sm text-gray-600">Ngày hoàn trả khoản vay</p>
                                 <p class="text-sm font-medium text-gray-800">{{ optional($loanLog->due_date)->format('d-m-Y') }}</p>
                             </div>
-                            @if($loanLog->due_date && $loanLog->due_date->isPast())
-                                <div class="text-center">
-                                    <span class="text-sm text-red-600 font-medium">Quá hạn</span>
-                                </div>
-                            @endif
+                            <div class="text-center">
+                                @if(!empty($loan->overdue_status))
+                                    <span class="text-sm font-medium {{ 
+                                        str_contains(strtolower($loan->overdue_status), 'quá hạn') ? 'text-red-600' : 
+                                        (str_contains(strtolower($loan->overdue_status), 'gia hạn') ? 'text-yellow-600' : 'text-green-600')
+                                    }}">{{ $loan->overdue_status }}</span>
+                                @else
+                                    <span class="text-sm text-green-600 font-medium"></span>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -92,7 +97,7 @@
                         </div>
                         <div class="flex border-b border-gray-200">
                             <div class="w-1/2 p-3 border-r border-gray-200">
-                                <span class="text-sm font-medium text-gray-800">{{ $loan->created_at->format('d-m-Y') }}</span>
+                                <span class="text-sm font-medium text-gray-800">{{ $loan->start_date ? $loan->start_date->format('d-m-Y') : 'N/A' }}</span>
                             </div>
                             <div class="w-1/2 p-3">
                                 <span class="text-sm font-medium text-gray-800">{{ number_format($loan->disbursed_amount, 0, ',', '.') }} VND</span>
@@ -109,7 +114,7 @@
                         </div>
                         <div class="flex border-b border-gray-200">
                             <div class="w-1/2 p-3 border-r border-gray-200">
-                                <span class="text-sm font-medium text-gray-800">{{ $loan->term_months }} ngày</span>
+                                <span class="text-sm font-medium text-gray-800">{{ $loan->term_months }}</span>
                             </div>
                             <div class="w-1/2 p-3">
                                 <span class="text-sm font-medium text-gray-800">{{ number_format($totalDue, 0, ',', '.') }} VND</span>
@@ -118,7 +123,7 @@
 
                         <div class="flex border-b border-gray-200">
                             <div class="w-1/2 p-3 border-r border-gray-200 bg-gray-50">
-                                <span class="text-sm text-gray-600">Phí quá hạn vay</span>
+                                <span class="text-sm text-gray-600">Phí quá thanh toán</span>
                             </div>
                             <div class="w-1/2 p-3 border-r border-gray-200 bg-gray-50">
                                 <span class="text-sm text-gray-600">Tổng số tiền cần hoàn trả</span>
@@ -129,13 +134,13 @@
                                 <span class="text-sm font-medium text-gray-800">{{ number_format($loanLog->fee_due, 0, ',', '.') }} VND</span>
                             </div>
                             <div class="w-1/2 p-3">
-                                <span class="text-sm font-bold text-[#800080]">{{ number_format($totalDue, 0, ',', '.') }} VND</span>
+                                <span class="text-sm font-bold text-black">{{ number_format($totalDue, 0, ',', '.') }} VND</span>
                             </div>
                         </div>
                     </div>
 
                     <button wire:click="payNow" 
-                            class="w-full mt-6 bg-[#800080] text-white py-4 rounded-lg font-medium text-lg hover:bg-[#6a006a] transition-colors">
+                            class="w-full mt-6 bg-[#fef4bf] text-black py-4 rounded-lg font-medium text-lg hover:bg-[#efdd7e] transition-colors">
                         Lập tức thanh toán
                     </button>
                 </div>
@@ -154,4 +159,3 @@
         @endif
     </div>
 </div>
-

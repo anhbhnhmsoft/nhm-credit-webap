@@ -2,8 +2,9 @@
 
 namespace App\Livewire\Frontend;
 
-use Livewire\Component;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
+use Livewire\Component;
 use App\Models\User;
 use App\Utils\Constants\RoleUser;
 use Illuminate\Support\Facades\Hash;
@@ -11,15 +12,18 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 
 #[Layout('components.layouts.app')]
-class RegisterPage extends Component
+#[Title('Đăng ký')]
+class RegisterUnifiedPage extends Component
 {
+    public string $tab = 'otp';
+
     public string $phone = '';
     public string $fullName = '';
     public string $email = '';
     public string $password = '';
     public string $confirmPassword = '';
 
-    public function submit()
+    public function submitPassword()
     {
         $this->validate([
             'phone' => 'required|string|max:20|unique:users,phone',
@@ -43,13 +47,12 @@ class RegisterPage extends Component
         ]);
 
         Auth::login($user);
-        
         session()->flash('success', 'Đăng ký thành công!');
         return redirect()->route('profile');
     }
 
     public function render()
     {
-        return view('livewire.frontend.auth.register');
+        return view('livewire.frontend.auth.register-unified');
     }
 }

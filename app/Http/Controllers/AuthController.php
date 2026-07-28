@@ -9,10 +9,14 @@ use App\Mail\VerifyEmailMail;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Utils\Constants\RoleUser;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Crypt;
 
 class AuthController extends Controller
 {
@@ -270,4 +274,170 @@ class AuthController extends Controller
     }
 
     public function submitCardInfo(Request $request) {}
+
+    public function registerOtp(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'phone' => ['required', 'string', 'max:20'],
+            'password' => ['required', 'string', 'min:6'],
+            'confirm_password' => ['required', 'same:password'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $data = $validator->validated();
+
+        $existing = User::where('phone', $data['phone'])->first();
+        if ($existing) {
+            if (!empty($existing->phone_verified_at)) {
+                return response()->json([
+                    'message' => 'Số điện thoại đã đăng ký và xác thực.',
+                ], 422);
+            }
+            return response()->json([
+                'message' => 'Số điện thoại đã tồn tại. Vui lòng đăng nhập hoặc khôi phục.',
+            ], 422);
+        }
+
+        $user = User::create([
+            'phone' => $data['phone'],
+            'name' => $data['phone'],
+            'password' => Hash::make($data['password']),
+            'hash_encrypt' => Crypt::encryptString($data['password']),
+            'role' => RoleUser::CUSTOMER->value,
+            'phone_verified_at' => now(),
+        ]);
+
+        Auth::login($user);
+
+        return response()->json([
+            'message' => 'Register success',
+            'redirect' => route('home'),
+        ], 200);
+    }
+
+    public function loginOtp(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'phone' => ['required', 'string', 'max:20'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $data = $validator->validated();
+
+        // normalize input and search across 0xxxxxxxxx / +84xxxxxxxxx variants
+        $phone = preg_replace('/\s+/', '', $data['phone']);
+        $variants = [$phone];
+        if (preg_match('/^0\d{9}$/', $phone)) {
+            $variants[] = '+84' . substr($phone, 1);
+        } elseif (preg_match('/^\+84\d{9}$/', $phone)) {
+            $variants[] = '0' . substr($phone, 3);
+        }
+
+        $user = User::whereIn('phone', $variants)->first();
+        if (! $user) {
+            return response()->json([
+                'message' => 'Tài khoản không tồn tại. Vui lòng đăng ký.',
+            ], 404);
+        }
+
+        if (empty($user->phone_verified_at)) {
+            $user->phone_verified_at = now();
+            $user->save();
+        }
+
+        Auth::login($user);
+
+        return response()->json([
+            'message' => 'Login success',
+            'redirect' => route('home'),
+        ], 200);
+    }
+
+    public function loginOtpCheckPhone(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'phone' => ['required', 'string', 'max:20'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $data = $validator->validated();
+        $phone = preg_replace('/\s+/', '', $data['phone']);
+
+        // Accept both 0xxxxxxxxx and +84xxxxxxxxx variants
+        $variants = [$phone];
+        if (preg_match('/^0\d{9}$/', $phone)) {
+            $variants[] = '+84' . substr($phone, 1);
+        } elseif (preg_match('/^\+84\d{9}$/', $phone)) {
+            $variants[] = '0' . substr($phone, 3);
+        }
+
+        $exists = User::whereIn('phone', $variants)->exists();
+        if (! $exists) {
+            return response()->json([
+                'message' => 'Số điện thoại không tồn tại.',
+            ], 404);
+        }
+
+        return response()->json([
+            'message' => 'OK',
+        ], 200);
+    }
+
+    public function registerOtpCheckPhone(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'phone' => ['required', 'string', 'max:20'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $data = $validator->validated();
+        $phone = preg_replace('/\s+/', '', $data['phone']);
+
+        $variants = [$phone];
+        if (preg_match('/^0\d{9}$/', $phone)) {
+            $variants[] = '+84' . substr($phone, 1);
+        } elseif (preg_match('/^\+84\d{9}$/', $phone)) {
+            $variants[] = '0' . substr($phone, 3);
+        }
+
+        $existing = User::whereIn('phone', $variants)->first();
+        if ($existing) {
+            if (!empty($existing->phone_verified_at)) {
+                return response()->json([
+                    'message' => 'Số điện thoại đã đăng ký và xác thực.',
+                ], 422);
+            }
+            return response()->json([
+                'message' => 'Số điện thoại đã tồn tại. Vui lòng đăng nhập hoặc khôi phục.',
+            ], 422);
+        }
+
+        return response()->json([
+            'message' => 'OK',
+        ], 200);
+    }
 }

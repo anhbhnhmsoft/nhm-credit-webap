@@ -18,9 +18,9 @@ class LoanPackagesForm
                         ->required()
                         ->maxLength(255),
                     TextInput::make('config_loans.term_month')
-                        ->label('Kỳ hạn (tháng)')
-                        ->placeholder('6, 12, 18, 24')
-                        ->helperText('Nhập các tháng cách nhau bằng dấu phẩy. Ví dụ: 6, 12, 18, 24 tháng'),
+                        ->label('Kỳ hạn (ngày)')
+                        ->placeholder('7, 14')
+                        ->helperText('Nhập số ngày cách nhau bằng dấu phẩy. Ví dụ: 7, 14 ngày'),
                     TextInput::make('config_loans.interest_rate')
                         ->label('Lãi suất (%)')
                         ->numeric()

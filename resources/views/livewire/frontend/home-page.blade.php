@@ -19,27 +19,24 @@
             background-color: #fef4bf;
         }
 
+        .btn-custom:hover {
+            background-color: #fef4bf;
+        }
+
         .range-primary-color {
             --range-thumb: #645b5b;
             color: #fef4bf;
         }
+        /* Fix overlap for widths <= 770px: place banner info in normal flow */
+        @media (max-width: 770px) {
+            .hero-info { position: static !important; top: auto !important; left: auto !important; width: 100% !important; }
+            .hero-pad { padding-bottom: 1rem; }
+        }
     </style>
 
     <div class="h-full w-full overflow-y-auto sm:overflow-x-hidden">
-        <div class="space-y-3 pb-3">
-            @if (session('success'))
-                <div class="mx-3 mt-3 rounded-lg bg-green-100 px-4 py-3 text-sm text-green-800">
-                    {{ session('success') }}
-                </div>
-            @endif
-
-            @if (session('error'))
-                <div class="mx-3 mt-3 rounded-lg bg-red-100 px-4 py-3 text-sm text-red-800">
-                    {{ session('error') }}
-                </div>
-            @endif
-
-            <div class="hero-bg w-full bg-contain object-fill bg-no-repeat border-none relative">
+        <div class="space-y-3 pb-3 max-w-[768px] mx-auto">
+            <div class="hero-bg w-full bg-contain object-fill bg-no-repeat border-none relative hero-pad">
                 <div class="w-full h-full md:h-auto flex flex-col justify-start items-center space-y-2 pt-12 md:pt-10">
                     <span class="text-[11.333vw] md:text-[6vw] lg:text-[4vw] text-center text-white font-medium lato-light">
                         {{ number_format(max($quickAmounts)) }}
@@ -48,10 +45,10 @@
                         2 phút nộp đơn trực tuyến · 5 phút cho vay nhanh chóng
                     </p>
                 </div>
-
-                <div class="absolute top-[200px] md:top-[34%] md:left-[5%]">
-                    <div class="flex justify-center items-center w-screen md:w-[400px]">
-                        <div class="p-3 bg-white shadow-md flex flex-row justify-start items-start w-[93vw] rounded-xl space-x-3">
+                <div class="hero-info absolute top-[200px] md:top-[34%] md:left-[5%]">
+                    <div class="flex justify-center items-center w-full md:w-[400px]">
+                        <div
+                            class="p-3 bg-white shadow-md flex flex-row justify-start items-start w-[93vw] rounded-xl space-x-3 m-5 mb-0 md:m-0">
                             <span role="img" aria-label="bell" class="anticon anticon-bell text-[#818488]">
                                 <svg viewBox="64 64 896 896" focusable="false" data-icon="bell" width="1em" height="1em" fill="currentColor" aria-hidden="true">
                                     <path d="M816 768h-24V428c0-141.1-104.3-257.8-240-277.2V112c0-22.1-17.9-40-40-40s-40 17.9-40 40v38.8C336.3 170.2 232 286.9 232 428v340h-24c-17.7 0-32 14.3-32 32v32c0 4.4 3.6 8 8 8h216c0 61.8 50.2 112 112 112s112-50.2 112-112h216c4.4 0 8-3.6 8-8v-32c0-17.7-14.3-32-32-32zM512 888c-26.5 0-48-21.5-48-48h96c0 26.5-21.5 48-48 48z"></path>
@@ -64,22 +61,9 @@
                     </div>
                 </div>
 
-                <div class="mt-[40px] md:mt-[180px] pb-24">
-                    <div class="flex flex-col justify-center items-center w-screen md:w-full gap-4">
-                        <div class="w-[93vw] md:w-[400px] bg-white rounded-lg shadow px-4 py-4">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-2">
-                                    @foreach ([1 => 'Khoản vay', 2 => 'Tài khoản', 3 => 'Hồ sơ'] as $step => $label)
-                                        <button type="button" wire:click="goToStep({{ $step }})"
-                                            class="flex items-center gap-2 {{ $currentStep === $step ? 'text-black' : 'text-gray-400' }}">
-                                            <span class="flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold {{ $currentStep === $step ? 'bg-[#fef4bf]' : 'bg-gray-100' }}">
-                                                {{ $step }}
-                                            </span>
-                                            <span class="text-xs font-medium">{{ $label }}</span>
-                                        </button>
-                                    @endforeach
-                                </div>
-                            </div>
+                <div class="mt-[40px] md:mt-[220px]">
+                    <div class="flex flex-col justify-center items-center w-full">
+                        <div class="w-[90vw] md:w-[400px] max-w-[400px] overflow-hidden bg-white rounded-lg shadow relative flex flex-col justify-start px-3 pb-3">
 
                             @if ($currentStep === 1)
                                 <form wire:submit.prevent="submitLoanRequest" class="space-y-5 mt-5">

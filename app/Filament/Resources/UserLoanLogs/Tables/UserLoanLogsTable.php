@@ -37,7 +37,7 @@ class UserLoanLogsTable
                     ->money('VND')
                     ->alignCenter(),
                 TextColumn::make('installment_no')
-                    ->label('Kỳ')
+                    ->label('Kỳ hạn (ngày)')
                     ->alignCenter(),
                 TextColumn::make('due_date')
                     ->label('Đến hạn')
@@ -175,6 +175,11 @@ class UserLoanLogsTable
                             }
                         }
                     }),
+                    Action::make('edit')
+                    ->label('Chỉnh sửa')
+                    ->icon('heroicon-o-pencil')
+                    ->url(fn ($record) => route('filament.admin.resources.user-loan-logs.edit', $record))
+                    ->color('primary'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

@@ -1,6 +1,6 @@
-@section('title', 'Đăng Nhập')
+@section('title', 'Đăng Nhập OTP')
 
-<div class="max-w-md mx-auto mt-10 bg-white shadow-lg border border-gray-100 rounded p-6">
+<div class="max-w-md mx-auto mt-10 bg-white shadow rounded p-6">
     <a href="javascript:history.back()" class="flex items-center space-x-2">
         <span role="img" aria-label="arrow-left" tabindex="-1" class="anticon anticon-arrow-left h-6 w-6">
             <svg viewBox="64 64 896 896" focusable="false" data-icon="arrow-left" width="1em" height="1em" fill="currentColor" aria-hidden="true">
@@ -8,23 +8,26 @@
                 </path>
             </svg>
         </span>
-        </a>
+    </a>
     <h1 class="text-2xl font-bold mb-6 text-center">Đăng Nhập</h1>
 
-    <form wire:submit.prevent="submit">
+    <form>
         @csrf
-        <div class="mb-4">
+        <div id="phone_input">
             <label class="block text-sm font-medium mb-1">Số điện thoại</label>
-            <input type="tel" wire:model="phone" class="w-full border rounded px-3 py-2" placeholder="VD: 0865 643 858" required>
+            <input type="tel" id="phoneNumber" wire:model="phone" class="w-full border rounded px-3 py-2" placeholder="VD: 0865 643 858" required>
         </div>
 
-        <div class="mb-4">
-            <label class="block text-sm font-medium mb-1">Mật khẩu</label>
-            <input type="password" wire:model="password" class="w-full border rounded px-3 py-2" placeholder="Nhập mật khẩu" required>
+        <div id="verification_input" class="hidden mt-4">
+            <label class="block text-sm font-medium mb-1">Mã OTP</label>
+            <input type="text" id="verification_code" class="w-full border rounded px-3 py-2" placeholder="Nhập mã OTP 6 số" maxlength="6">
         </div>
 
-        <div class="mt-6">
-            <button type="submit" class="w-full bg-[#fef4bf] text-black font-semibold py-2 px-4 rounded cursor-pointer">Đăng Nhập</button>
+        <div id="recaptcha-container" class="my-3"></div>
+
+        <div class="flex space-x-2 mt-4">
+            <button type="button" id="send_otp" class="flex-1 bg-[#fef4bf] text-black font-bold py-2 px-4 rounded cursor-pointer" disabled onclick="sendOTP()">Gửi OTP</button>
+            <button type="button" id="login_btn" class="flex-1 bg-green-600 text-white font-bold py-2 px-4 rounded hidden cursor-pointer hover:bg-green-700" onclick="verifyOTP()">Đăng Nhập</button>
         </div>
     </form>
 
@@ -35,4 +38,5 @@
     <div class="mt-4 text-center">
         <a href="{{ route('register') }}" class="text-black hover:underline">Chưa có tài khoản? Đăng ký</a>
     </div>
+    @vite('resources/js/firebase.js')
 </div>

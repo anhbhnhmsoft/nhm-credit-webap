@@ -27,14 +27,14 @@ class LoanPackagesTable
                 ->label('Tên gói')
                 ->getStateUsing(fn ($record) => data_get($record->config_loans, 'name', '')),
             TextColumn::make('config_loans_term')
-                ->label('Kỳ hạn (tháng)')
+                ->label('Kỳ hạn (ngày)')
                 ->alignCenter()
                 ->getStateUsing(function ($record) {
-                    $termMonths = data_get($record->config_loans, 'term_month', []);
-                    if (is_array($termMonths)) {
-                        return implode(', ', $termMonths) . ' tháng';
+                    $termDays = data_get($record->config_loans, 'term_month', []);
+                    if (is_array($termDays)) {
+                        return implode(', ', $termDays) . ' ngày';
                     }
-                    return $termMonths . ' tháng';
+                    return $termDays . ' ngày';
                 }),
             TextColumn::make('config_loans_rate')
                 ->label('Lãi suất')

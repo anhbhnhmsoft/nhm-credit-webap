@@ -50,6 +50,7 @@ class PaymentsTable
 
                 TextColumn::make('userLoanLog.installment_no')
                     ->label('Kỳ trả')
+                    ->alignCenter()
                     ->formatStateUsing(fn ($state) => $state ? "Kỳ {$state}" : '-')
                     ->sortable(),
 

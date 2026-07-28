@@ -6,14 +6,12 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\FileUpload;
 use Filament\Schemas\Schema;
 use Filament\Actions\Action;
 use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Wizard;
 use Filament\Schemas\Components\Wizard\Step;
-use App\Utils\Constants\RoleUser;
 
 class UserForm
 {
@@ -138,8 +136,6 @@ class UserForm
                                     ->password()
                                     ->visible(fn($get, $record) => $record === null || $get('showChangePassword') === true)
                                     ->required(fn($record) => $record === null)
-                                    ->dehydrateStateUsing(fn($state) => !empty($state) ? bcrypt($state) : null)
-                                    ->dehydrated(fn($state) => filled($state))
                                     ->maxLength(255),
                                 TextInput::make('new_password_confirmation')
                                     ->label('Xác nhận mật khẩu mới')

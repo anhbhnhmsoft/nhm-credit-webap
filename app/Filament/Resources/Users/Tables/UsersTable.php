@@ -4,7 +4,6 @@ namespace App\Filament\Resources\Users\Tables;
 
 use App\Utils\Helper;
 use App\Utils\Constants\RoleUser;
-use App\Models\Bank;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -13,11 +12,9 @@ use Filament\Actions\DeleteAction;
 use Filament\Notifications\Notification;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Select;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
@@ -26,6 +23,7 @@ class UsersTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 ImageColumn::make('avatar_path')
                 ->label('Ảnh đại diện')
@@ -44,6 +42,7 @@ class UsersTable
                     ->label('Email')
                     ->searchable(),
                 TextColumn::make('phone')
+                    ->numeric()
                     ->label('Số điện thoại')
                     ->searchable(),
                 TextColumn::make('address')
@@ -61,15 +60,13 @@ class UsersTable
                         $account = $record->userBankAccounts()->first();
                         $accountId = $account?->id;
                         return [
-                            Select::make('bank_id')
+                            TextInput::make('bank_name')
                                 ->label('Ngân hàng')
-                                ->options(fn () => Bank::query()->orderBy('name')->pluck('name', 'id'))
-                                ->searchable()
-                                ->preload()
                                 ->required()
-                                ->default($account?->bank_id),
+                                ->default($account?->bank_name),
                             TextInput::make('account_number')
                                 ->label('Số tài khoản')
+                                ->numeric()
                                 ->required()
                                 ->rule(function () use ($record, $accountId) {
                                     return Rule::unique('user_bank_accounts', 'account_number')
@@ -83,19 +80,15 @@ class UsersTable
                                 ->required()
                                 ->maxLength(255)
                                 ->default($account?->account_name),
-                            Toggle::make('is_verified')
-                                ->label('Xác thực tài khoản')
-                                ->default((bool)($account?->is_verified ?? false)),
                         ];
                     })
                     ->action(function ($record, array $data) {
                         $account = $record->userBankAccounts()->first();
                         if ($account) {
                             $account->update([
-                                'bank_id' => $data['bank_id'],
+                                'bank_name' => $data['bank_name'],
                                 'account_number' => $data['account_number'],
                                 'account_name' => $data['account_name'],
-                                'is_verified' => (bool)($data['is_verified'] ?? false),
                             ]);
                             Notification::make()
                                 ->title('Cập nhật tài khoản ngân hàng thành công')
@@ -103,10 +96,9 @@ class UsersTable
                                 ->send();
                         } else {
                             $record->userBankAccounts()->create([
-                                'bank_id' => $data['bank_id'],
+                                'bank_name' => $data['bank_name'],
                                 'account_number' => $data['account_number'],
                                 'account_name' => $data['account_name'],
-                                'is_verified' => (bool)($data['is_verified'] ?? false),
                             ]);
                             Notification::make()
                                 ->title('Thêm tài khoản ngân hàng thành công')
