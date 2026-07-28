@@ -185,7 +185,15 @@
                                         @elseif ($existing_front_image_card)
                                             <img src="{{ route('public_image', ['file_path' => $existing_front_image_card]) }}" alt="" class="mb-2 h-28 w-full rounded-lg object-cover">
                                         @endif
-                                        <input type="file" wire:model="front_image_card" accept="image/*" class="w-full text-sm">
+                                        <input id="front-image-card" type="file" wire:model="front_image_card" accept="image/*" class="sr-only">
+                                        <label for="front-image-card"
+                                            class="flex min-h-20 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-center transition hover:border-amber-400 hover:bg-amber-100">
+                                            <span>
+                                                <span class="block text-sm font-semibold text-gray-800">{{ $front_image_card || $existing_front_image_card ? 'Chọn ảnh khác' : 'Chọn ảnh mặt trước' }}</span>
+                                                <span class="mt-1 block text-xs text-gray-500" wire:loading.remove wire:target="front_image_card">JPG, PNG hoặc WEBP - tối đa 2 MB</span>
+                                                <span class="mt-1 block text-xs font-medium text-amber-700" wire:loading wire:target="front_image_card">Đang tải ảnh...</span>
+                                            </span>
+                                        </label>
                                         @error('front_image_card') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
                                     </div>
 
@@ -196,7 +204,15 @@
                                         @elseif ($existing_back_image_card)
                                             <img src="{{ route('public_image', ['file_path' => $existing_back_image_card]) }}" alt="" class="mb-2 h-28 w-full rounded-lg object-cover">
                                         @endif
-                                        <input type="file" wire:model="back_image_card" accept="image/*" class="w-full text-sm">
+                                        <input id="back-image-card" type="file" wire:model="back_image_card" accept="image/*" class="sr-only">
+                                        <label for="back-image-card"
+                                            class="flex min-h-20 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-center transition hover:border-amber-400 hover:bg-amber-100">
+                                            <span>
+                                                <span class="block text-sm font-semibold text-gray-800">{{ $back_image_card || $existing_back_image_card ? 'Chọn ảnh khác' : 'Chọn ảnh mặt sau' }}</span>
+                                                <span class="mt-1 block text-xs text-gray-500" wire:loading.remove wire:target="back_image_card">JPG, PNG hoặc WEBP - tối đa 2 MB</span>
+                                                <span class="mt-1 block text-xs font-medium text-amber-700" wire:loading wire:target="back_image_card">Đang tải ảnh...</span>
+                                            </span>
+                                        </label>
                                         @error('back_image_card') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
                                     </div>
 
@@ -207,7 +223,15 @@
                                         @elseif ($existing_id_card_selfie_path)
                                             <img src="{{ route('public_image', ['file_path' => $existing_id_card_selfie_path]) }}" alt="" class="mb-2 h-28 w-full rounded-lg object-cover">
                                         @endif
-                                        <input type="file" wire:model="id_card_selfie_path" accept="image/*" class="w-full text-sm">
+                                        <input id="id-card-selfie" type="file" wire:model="id_card_selfie_path" accept="image/*" class="sr-only">
+                                        <label for="id-card-selfie"
+                                            class="flex min-h-20 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-center transition hover:border-amber-400 hover:bg-amber-100">
+                                            <span>
+                                                <span class="block text-sm font-semibold text-gray-800">{{ $id_card_selfie_path || $existing_id_card_selfie_path ? 'Chọn ảnh khác' : 'Chọn ảnh chụp chính chủ' }}</span>
+                                                <span class="mt-1 block text-xs text-gray-500" wire:loading.remove wire:target="id_card_selfie_path">JPG, PNG hoặc WEBP - tối đa 2 MB</span>
+                                                <span class="mt-1 block text-xs font-medium text-amber-700" wire:loading wire:target="id_card_selfie_path">Đang tải ảnh...</span>
+                                            </span>
+                                        </label>
                                         @error('id_card_selfie_path') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
                                     </div>
 

@@ -85,6 +85,7 @@ class EditUserLoans extends EditRecord
                         ->content(function ($get) {
                             $record = $this->getRecord();
                             $bankAccount = UserBankAccount::query()
+                                ->with('bank')
                                 ->where('user_id', $record->user_id)
                                 ->first();
 
@@ -93,7 +94,8 @@ class EditUserLoans extends EditRecord
                             }
 
                             $amount = (int) ($get('disbursed_amount') ?: $record->principal_amount);
-                            $bankCode = self::resolveBankQrCode($bankAccount->bank_name);
+                            $bankCode = $bankAccount->bank?->code
+                                ?: self::resolveBankQrCode($bankAccount->bank_name);
                             $description = 'GIAI NGAN ' . $record->id;
                             $accountName = mb_strtoupper($bankAccount->account_name);
                             $qrUrl = Helper::generateQRCodeBanking(
@@ -108,7 +110,7 @@ class EditUserLoans extends EditRecord
                             return new HtmlString(
                                 '
                                 <div class="space-y-3 rounded-lg border border-gray-200 p-4">'
-                                . '<img src="' . e($qrUrl) . '" alt="QR thanh toán" class="mx-auto h-56 w-56 object-contain" />'
+                                . '<img src="' . e($qrUrl) . '" alt="QR thanh toán" style="display:block;width:100%;max-width:380px;height:auto;margin:0 auto;" />'
                                 . '<div class="space-y-1 text-sm">'
                                 . '<p><strong>Ngân hàng:</strong> ' . e($bankAccount->bank_name) . '</p>'
                                 . '<p><strong>Số tài khoản:</strong> ' . e($bankAccount->account_number) . '</p>'
@@ -424,5 +426,23 @@ class EditUserLoans extends EditRecord
         UserLoanLog::withTrashed()->where('user_loan_id', $record->id)->forceDelete();
         
         $this->userLoanLogService->generateLogsForLoan($record);
+    }
+
+    private static function resolveBankQrCode(?string $bankName): string
+    {
+        $normalized = mb_strtolower((string) $bankName);
+
+        return match (true) {
+            str_contains($normalized, 'vietcombank'),
+            str_contains($normalized, 'ngoai thuong') => 'vcb',
+            str_contains($normalized, 'techcombank') => 'tcb',
+            str_contains($normalized, 'mb bank'),
+            str_contains($normalized, 'quan doi') => 'MB',
+            str_contains($normalized, 'bidv') => 'bidv',
+            str_contains($normalized, 'agribank') => 'vba',
+            str_contains($normalized, 'vietinbank'),
+            str_contains($normalized, 'cong thuong') => 'icb',
+            default => 'vcb',
+        };
     }
 }
