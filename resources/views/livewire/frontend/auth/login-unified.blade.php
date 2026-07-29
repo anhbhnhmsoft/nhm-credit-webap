@@ -9,7 +9,7 @@
                 <input type="hidden" name="_token" value="{{ csrf_token() }}">
                 <label class="block text-sm font-medium mb-1">Số điện thoại</label>
                 <input type="tel" id="phoneNumber" class="w-full border rounded px-3 py-2 border-gray-200 shadow-sm mb-3" placeholder="0912345678" required>
-                <button type="button" id="login_phone_btn" onclick="loginWithPhone()" class="w-full bg-[#fef4bf] text-black font-semibold py-2 rounded transition disabled:opacity-60 cursor-pointer">Đăng nhập</button>
+                <button type="button" id="login_phone_btn" onclick="loginWithPhone()" class="w-full bg-green-600 text-white font-semibold py-2 rounded transition hover:bg-green-700 disabled:opacity-60 cursor-pointer">Đăng nhập</button>
             </div>
         </div>
         @vite('resources/js/login-phone.js')

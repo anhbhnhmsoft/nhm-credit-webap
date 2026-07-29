@@ -2,7 +2,7 @@
 
 <div class="h-full w-full overflow-y-auto sm:overflow-x-hidden">
     <div class="w-full flex flex-col justify-start items-start">
-        <div class="bg-[#fef4bf] w-full flex items-center justify-between px-4 py-4">
+        <div class="bg-green-100 w-full flex items-center justify-between px-4 py-4">
             <a href="{{ route('profile') }}" class="text-black">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
@@ -60,7 +60,7 @@
                 @if(empty($bankAccount))
                 <div class="p-4">
                     <button wire:click="showAddForm" 
-                            class="w-full bg-[#fef4bf] text-black py-3 px-4 rounded-lg font-medium hover:bg-[#efdd7e] transition-colors">
+                            class="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors">
                         Thêm tài khoản ngân hàng
                     </button>
                 </div>
@@ -111,7 +111,7 @@
                             Hủy
                         </button>
                         <button type="submit" 
-                                class="flex-1 bg-[#fef4bf] text-black py-2 px-4 rounded-lg hover:bg-[#efdd7e] transition-colors">
+                                class="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">
                             {{ $editingAccount ? 'Cập nhật' : 'Thêm' }}
                         </button>
                     </div>

@@ -71,7 +71,7 @@
                             </div>
                         </div>
                         <button wire:click="viewLoanDetail('{{ $log->id }}')" 
-                                class="w-full mt-4 bg-[#fae36f] text-black font-semibold py-3 rounded-lg hover:bg-[#efdd7e] transition-colors cursor-pointer">
+                                class="w-full mt-4 bg-green-600 text-white font-semibold py-3 rounded-lg hover:bg-green-700 transition-colors cursor-pointer">
                             Thanh toán ngay
                         </button>
                     </div>

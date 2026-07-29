@@ -45,7 +45,7 @@
             </div>
             @error('confirmPassword') <div class="text-red-600 text-sm mt-1">{{ $message }}</div> @enderror
         </div>
-        <button type="submit" class="w-full bg-[#fef4bf] text-black font-semibold py-2 rounded cursor-pointer">Đăng ký</button>
+        <button type="submit" class="w-full bg-green-600 text-white font-semibold py-2 rounded cursor-pointer hover:bg-green-700">Đăng ký</button>
     </form>
 
     <div class="mt-4 text-center text-sm text-gray-700">

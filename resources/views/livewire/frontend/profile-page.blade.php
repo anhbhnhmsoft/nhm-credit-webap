@@ -2,7 +2,7 @@
 
 <div class="h-full w-full overflow-y-auto sm:overflow-x-hidden">
     <div class="w-full flex flex-col justify-start items-start">
-        <div class="bg-[#fef4bf] w-full flex flex-col justify-center items-center h-[220px] space-y-3">
+        <div class="bg-green-100 w-full flex flex-col justify-center items-center h-[220px] space-y-3">
             <img class="h-[56px]" src="/images/user_default.png">
             @auth
                 @php
@@ -22,7 +22,7 @@
         <div class="w-full bg-white">
             <ul class="divide-y divide-gray-200">
                 <li>
-                    <a href="{{ route('my-bank') }}" class="flex items-center px-4 py-4 hover:bg-[#fffdf0cc] transition-colors">
+                    <a href="{{ route('my-bank') }}" class="flex items-center px-4 py-4 hover:bg-green-50 transition-colors">
                         <svg class="w-6 h-6 text-gray-700 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
                         </svg>
@@ -32,7 +32,7 @@
                 
                 @foreach($staticPages as $ps)
                 <li>
-                    <a href="{{ route('frontend.page-static', ['slug' => $ps->slug]) }}" class="flex items-center px-4 py-4 hover:bg-[#fffdf0cc] transition-colors">
+                    <a href="{{ route('frontend.page-static', ['slug' => $ps->slug]) }}" class="flex items-center px-4 py-4 hover:bg-green-50 transition-colors">
                         @if(!empty($ps->icon_svg))
                             <span class="mr-3 w-6 h-6 leading-none">{!! str_replace('<svg','<svg class=\'w-full h-full\'', $ps->icon_svg) !!}</span>
                         @else
@@ -46,7 +46,7 @@
                 @endforeach
                 
                 <li>
-                    <a href="{{ route('my-setting') }}" class="flex items-center px-4 py-4 hover:bg-[#fffdf0cc] transition-colors">
+                    <a href="{{ route('my-setting') }}" class="flex items-center px-4 py-4 hover:bg-green-50 transition-colors">
                         <svg class="w-6 h-6 text-gray-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>

@@ -3,7 +3,8 @@
 <div>
     <style>
         .hero-bg {
-            background-image: url('/images/bg-home.png');
+            background-image: linear-gradient(145deg, rgba(22, 163, 74, 0.94), rgba(20, 83, 45, 0.78)), url('/images/bg-home.png');
+            background-blend-mode: color, normal;
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -16,16 +17,17 @@
         }
 
         .btn-custom {
-            background-color: #fef4bf;
+            background-color: var(--brand-primary);
+            color: white;
         }
 
         .btn-custom:hover {
-            background-color: #fef4bf;
+            background-color: var(--brand-primary-hover);
         }
 
         .range-primary-color {
             --range-thumb: #645b5b;
-            color: #fef4bf;
+            color: var(--brand-primary);
         }
         /* Fix overlap for widths <= 770px: place banner info in normal flow */
         @media (max-width: 770px) {
@@ -93,7 +95,7 @@
                                     <div class="grid grid-cols-5 gap-2">
                                         @foreach ($quickAmounts as $quickAmount)
                                             <button type="button" wire:click="setAmount({{ $quickAmount }})"
-                                                class="rounded-lg border px-2 py-2 text-xs font-semibold transition-colors {{ $amount == $quickAmount ? 'border-black bg-[#fef4bf] text-black' : 'border-gray-200 bg-white text-gray-600' }}">
+                                                class="rounded-lg border px-2 py-2 text-xs font-semibold transition-colors {{ $amount == $quickAmount ? 'border-green-600 bg-green-100 text-green-900' : 'border-gray-200 bg-white text-gray-600' }}">
                                                 {{ number_format($quickAmount / 1000) }}K
                                             </button>
                                         @endforeach
@@ -105,7 +107,7 @@
                                             <div class="flex items-center gap-2">
                                                 @foreach ([7, 14] as $dayOption)
                                                     <button type="button" wire:click="setSelectedTermDays({{ $dayOption }})"
-                                                        class="rounded-full px-4 py-2 text-sm font-semibold transition-colors {{ $selectedTermDays === $dayOption ? 'bg-[#fef4bf] text-black' : 'border border-gray-200 text-gray-500' }}">
+                                                        class="rounded-full px-4 py-2 text-sm font-semibold transition-colors {{ $selectedTermDays === $dayOption ? 'bg-green-600 text-white' : 'border border-gray-200 text-gray-500' }}">
                                                         {{ $dayOption }} ngày
                                                     </button>
                                                 @endforeach
@@ -114,7 +116,7 @@
                                     </div>
 
                                     <button type="submit" wire:loading.attr="disabled" wire:target="submitLoanRequest"
-                                        class="w-full py-3 text-black text-center btn-custom rounded-3xl font-semibold cursor-pointer disabled:opacity-70">
+                                        class="w-full py-3 text-center btn-custom rounded-3xl font-semibold cursor-pointer disabled:opacity-70">
                                         Tiếp tục
                                     </button>
                                 </form>
@@ -151,7 +153,7 @@
                                             Quay lại
                                         </button>
                                         <button type="submit" wire:loading.attr="disabled" wire:target="submitBankStep"
-                                            class="flex-1 rounded-3xl btn-custom py-3 text-sm font-semibold text-black disabled:opacity-70">
+                                            class="flex-1 rounded-3xl btn-custom py-3 text-sm font-semibold disabled:opacity-70">
                                             Tiếp tục
                                         </button>
                                     </div>
@@ -187,11 +189,11 @@
                                         @endif
                                         <input id="front-image-card" type="file" wire:model="front_image_card" accept="image/*" class="sr-only">
                                         <label for="front-image-card"
-                                            class="flex min-h-20 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-center transition hover:border-amber-400 hover:bg-amber-100">
+                                            class="flex min-h-20 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-green-300 bg-green-50 px-4 py-3 text-center transition hover:border-green-500 hover:bg-green-100">
                                             <span>
                                                 <span class="block text-sm font-semibold text-gray-800">{{ $front_image_card || $existing_front_image_card ? 'Chọn ảnh khác' : 'Chọn ảnh mặt trước' }}</span>
                                                 <span class="mt-1 block text-xs text-gray-500" wire:loading.remove wire:target="front_image_card">JPG, PNG hoặc WEBP - tối đa 2 MB</span>
-                                                <span class="mt-1 block text-xs font-medium text-amber-700" wire:loading wire:target="front_image_card">Đang tải ảnh...</span>
+                                                <span class="mt-1 block text-xs font-medium text-green-700" wire:loading wire:target="front_image_card">Đang tải ảnh...</span>
                                             </span>
                                         </label>
                                         @error('front_image_card') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
@@ -206,11 +208,11 @@
                                         @endif
                                         <input id="back-image-card" type="file" wire:model="back_image_card" accept="image/*" class="sr-only">
                                         <label for="back-image-card"
-                                            class="flex min-h-20 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-center transition hover:border-amber-400 hover:bg-amber-100">
+                                            class="flex min-h-20 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-green-300 bg-green-50 px-4 py-3 text-center transition hover:border-green-500 hover:bg-green-100">
                                             <span>
                                                 <span class="block text-sm font-semibold text-gray-800">{{ $back_image_card || $existing_back_image_card ? 'Chọn ảnh khác' : 'Chọn ảnh mặt sau' }}</span>
                                                 <span class="mt-1 block text-xs text-gray-500" wire:loading.remove wire:target="back_image_card">JPG, PNG hoặc WEBP - tối đa 2 MB</span>
-                                                <span class="mt-1 block text-xs font-medium text-amber-700" wire:loading wire:target="back_image_card">Đang tải ảnh...</span>
+                                                <span class="mt-1 block text-xs font-medium text-green-700" wire:loading wire:target="back_image_card">Đang tải ảnh...</span>
                                             </span>
                                         </label>
                                         @error('back_image_card') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
@@ -225,11 +227,11 @@
                                         @endif
                                         <input id="id-card-selfie" type="file" wire:model="id_card_selfie_path" accept="image/*" class="sr-only">
                                         <label for="id-card-selfie"
-                                            class="flex min-h-20 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-center transition hover:border-amber-400 hover:bg-amber-100">
+                                            class="flex min-h-20 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-green-300 bg-green-50 px-4 py-3 text-center transition hover:border-green-500 hover:bg-green-100">
                                             <span>
                                                 <span class="block text-sm font-semibold text-gray-800">{{ $id_card_selfie_path || $existing_id_card_selfie_path ? 'Chọn ảnh khác' : 'Chọn ảnh chụp chính chủ' }}</span>
                                                 <span class="mt-1 block text-xs text-gray-500" wire:loading.remove wire:target="id_card_selfie_path">JPG, PNG hoặc WEBP - tối đa 2 MB</span>
-                                                <span class="mt-1 block text-xs font-medium text-amber-700" wire:loading wire:target="id_card_selfie_path">Đang tải ảnh...</span>
+                                                <span class="mt-1 block text-xs font-medium text-green-700" wire:loading wire:target="id_card_selfie_path">Đang tải ảnh...</span>
                                             </span>
                                         </label>
                                         @error('id_card_selfie_path') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
@@ -241,7 +243,7 @@
                                             Quay lại
                                         </button>
                                         <button type="submit" wire:loading.attr="disabled" wire:target="submitProfileStep"
-                                            class="flex-1 rounded-3xl btn-custom py-3 text-sm font-semibold text-black disabled:opacity-70">
+                                            class="flex-1 rounded-3xl btn-custom py-3 text-sm font-semibold disabled:opacity-70">
                                             Tạo khoản vay
                                         </button>
                                     </div>

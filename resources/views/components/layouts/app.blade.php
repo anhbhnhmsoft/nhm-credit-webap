@@ -43,8 +43,8 @@
     <meta name="twitter:site" content="@Vicayvang">
 
     <!-- Theme & Color -->
-    <meta name="theme-color" content="#ffffff">
-    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="theme-color" content="#16a34a">
+    <meta name="msapplication-TileColor" content="#16a34a">
 
     <!-- CSS / JS -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])

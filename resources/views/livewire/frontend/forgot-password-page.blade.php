@@ -43,7 +43,7 @@
 
             <div class="mt-4">
                 <button type="submit" 
-                        class="w-full bg-[#fef4bf] text-black font-bold py-2 px-4 rounded cursor-pointer hover:bg-[#fef4bf]/80">
+                        class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer hover:bg-green-700">
                     Xác thực thông tin
                 </button>
             </div>
@@ -101,7 +101,7 @@
                     Quay lại
                 </button>
                 <button type="submit" 
-                        class="flex-1 bg-[#fef4bf] text-black font-bold py-2 px-4 rounded cursor-pointer hover:bg-[#fef4bf]/80">
+                        class="flex-1 bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer hover:bg-green-700">
                     Đặt lại mật khẩu
                 </button>
             </div>
@@ -121,7 +121,7 @@
             </p>
             <div class="mt-6">
                 <a href="{{ route('login') }}" 
-                   class="inline-flex items-center px-4 py-2 text-sm font-bold rounded-md text-black bg-[#fef4bf] hover:bg-[#fef4bf]/80">
+                   class="inline-flex items-center px-4 py-2 text-sm font-bold rounded-md text-white bg-green-600 hover:bg-green-700">
                     Đăng nhập ngay
                 </a>
             </div>

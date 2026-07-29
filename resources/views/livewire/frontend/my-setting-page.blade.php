@@ -2,7 +2,7 @@
 
 <div class="h-full w-full overflow-y-auto sm:overflow-x-hidden">
     <div class="w-full flex flex-col justify-start items-start">
-        <div class="bg-[#fef4bf] w-full flex items-center justify-between px-4 py-4">
+        <div class="bg-green-100 w-full flex items-center justify-between px-4 py-4">
             <a href="{{ route('profile') }}" class="text-black">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
@@ -26,13 +26,13 @@
                     <form method="POST" action="{{ route('logout') }}" class="flex justify-center">
                         @csrf
                         <button type="submit"
-                            class="px-4 py-2 bg-[#fef4bf] text-black font-bold rounded cursor-pointer hover:bg-[#fef4bf]/80">Đăng
+                            class="px-4 py-2 bg-green-600 text-white font-bold rounded cursor-pointer hover:bg-green-700">Đăng
                             xuất</button>
                     </form>
                 @else
                     <div class="flex justify-center">
                         <a href="{{ route('login') }}"
-                            class="px-4 py-2 bg-[#fef4bf] text-black font-semibold rounded inline-block mx-auto">Đăng
+                            class="px-4 py-2 bg-green-600 text-white font-semibold rounded inline-block mx-auto">Đăng
                             nhập</a>
                     </div>
                 @endauth

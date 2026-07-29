@@ -2,7 +2,7 @@
 
 <div class="h-full w-full overflow-y-auto sm:overflow-x-hidden">
     <div class="w-full flex flex-col justify-start items-start">
-        <div class="bg-[#fef4bf] w-full flex items-center justify-between px-4 py-4">
+        <div class="bg-green-100 w-full flex items-center justify-between px-4 py-4">
             <a href="{{ route('loan-application') }}" class="text-black">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
@@ -19,7 +19,7 @@
         @endif
 
         @if ($loan && $loanLog)
-            <div class="bg-[#fef4bf] w-full relative h-[150px]">
+            <div class="bg-green-100 w-full relative h-[150px]">
                 <div class="bg-white rounded-lg mx-4 mt-8 p-6 shadow-2xl relative z-20 transform -translate-y-4">
                     <div class="text-center">
                         <p class="text-sm text-gray-600 mb-2">Tổng số tiền cần phải trả</p>
@@ -140,7 +140,7 @@
                     </div>
 
                     <button wire:click="payNow" 
-                            class="w-full mt-6 bg-[#fef4bf] text-black py-4 rounded-lg font-medium text-lg hover:bg-[#efdd7e] transition-colors">
+                            class="w-full mt-6 bg-green-600 text-white py-4 rounded-lg font-medium text-lg hover:bg-green-700 transition-colors">
                         Lập tức thanh toán
                     </button>
                 </div>

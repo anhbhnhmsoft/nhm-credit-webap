@@ -26,7 +26,7 @@
         <div id="recaptcha-container" class="my-3"></div>
 
         <div class="flex space-x-2 mt-4">
-            <button type="button" id="send_otp" class="flex-1 bg-[#fef4bf] text-black font-bold py-2 px-4 rounded cursor-pointer" disabled onclick="sendOTP()">Gửi OTP</button>
+            <button type="button" id="send_otp" class="flex-1 bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer hover:bg-green-700" disabled onclick="sendOTP()">Gửi OTP</button>
             <button type="button" id="login_btn" class="flex-1 bg-green-600 text-white font-bold py-2 px-4 rounded hidden cursor-pointer hover:bg-green-700" onclick="verifyOTP()">Đăng Nhập</button>
         </div>
     </form>

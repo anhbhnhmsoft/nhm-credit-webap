@@ -68,7 +68,7 @@
         </div>
 
         <div class="mt-6">
-            <button type="submit" class="w-full bg-[#fef4bf] text-black font-semibold py-2 px-4 rounded cursor-pointer hover:bg-[#efdd7e]/80">Đăng ký</button>
+            <button type="submit" class="w-full bg-green-600 text-white font-semibold py-2 px-4 rounded cursor-pointer hover:bg-green-700">Đăng ký</button>
         </div>
     </form>
 

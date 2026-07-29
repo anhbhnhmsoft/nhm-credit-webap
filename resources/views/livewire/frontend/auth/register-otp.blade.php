@@ -58,7 +58,7 @@
         <div id="recaptcha-container" class="my-3"></div>
 
          <div class="flex space-x-2">
-             <button type="button" id="send_otp" onclick="sendOTP()" class="flex-1 bg-[#fef4bf] text-black font-bold py-2 px-4 rounded cursor-pointer" disabled>Gửi OTP</button>
+             <button type="button" id="send_otp" onclick="sendOTP()" class="flex-1 bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer hover:bg-green-700" disabled>Gửi OTP</button>
              <button type="button" id="verify_btn" class="flex-1 bg-green-600 text-white py-2 px-4 rounded hidden cursor-pointer hover:bg-green-700" onclick="verifyOTP()">Xác thực OTP</button>
          </div>
 
